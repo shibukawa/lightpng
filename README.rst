@@ -63,11 +63,11 @@ Use this command like this::
 Options
 ~~~~~~~
 
-|-t, --texture| Texture Mode (default)
-|-p, --preview| Preview Mode
-|-m, --mask| RGBA 5551 or RGB 565 (default)
-|-a, --alpha| RGBA 4444 (it is ignored if no alpha)
-|-h, --help| Show this message
+:-t, --texture: Texture Mode (default)
+:-p, --preview: Preview Mode
+:-m, --mask: RGBA 5551 or RGB 565 (default)
+:-a, --alpha: RGBA 4444 (it is ignored if no alpha)
+:-h, --help: Show this message
 
 Texture Mode / Preview Mode
 ---------------------------
