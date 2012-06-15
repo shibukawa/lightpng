@@ -42,16 +42,23 @@ from this PNG file directly.
 How To Build
 ------------
 
-It needs following libraries:
+It needs following libraries, but these source code are bundled:
 
 * libpng
 * libz
 
-This repository contains a build setting file of SCons for MacPorts environment on Mac OS X::
+This repository contains a build setting file of SCons. I tested on Mac OS X with MaccPorts environment,
+but maybe work on any scons/gcc environment::
 
-   $ sudo port install libpng scons 
+   $ sudo port install scons 
    $ scons
    $ ./lightpng input.png output.png
+
+If you have MinGW environment, you can build Win32 binary on your environment ::
+
+   $ sudo port install i386-mingw32-gcc scons
+   $ soncs -f SConstruct.mingw32
+   $ wine lightpng.exe input.png output.png
 
 Usage
 -----

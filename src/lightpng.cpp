@@ -1,5 +1,7 @@
 #include <iostream>
 #include <string>
+#include <zlib.h>
+#include <png.h>
 #include "lightpng.h"
 #include "PNGRead.h"
 #include "PNGWrite.h"
@@ -103,7 +105,7 @@ int main(int argc, const char** argv)
             case colorAutoDetect:
             case color4444:
                 {
-                    PNGWrite<5,6,5,0> writer(reader.width(), reader.height());
+                    PNGWrite<0> writer(reader.width(), reader.height(), 5, 6, 5);
                     writer.process(reader.raw_image(), (mode == previewMode));
                     writer.write(output_path);
                 }
@@ -116,14 +118,14 @@ int main(int argc, const char** argv)
             {
             case colorAutoDetect:
                 {
-                    PNGWrite<5,5,5,1> writer(reader.width(), reader.height());
+                    PNGWrite<1> writer(reader.width(), reader.height(), 5, 5, 5);
                     writer.process(reader.raw_image(), (mode == previewMode));
                     writer.write(output_path);
                 }
                 break;
             case color4444:
                 {
-                    PNGWrite<4,4,4,4> writer(reader.width(), reader.height());
+                    PNGWrite<4> writer(reader.width(), reader.height(), 4, 4, 4);
                     writer.process(reader.raw_image(), (mode == previewMode));
                     writer.write(output_path);
                 }

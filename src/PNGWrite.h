@@ -17,14 +17,14 @@ static inline void clamp(T& value, int min_value, int max_value)
                 max_value));
 }
 
-template <unsigned R, unsigned G, unsigned B, unsigned A>
+template <unsigned A>
 class PNGWrite
 {
 public:
-    explicit PNGWrite(size_t width, size_t height);
+    explicit PNGWrite(size_t width, size_t height, unsigned R, unsigned G, unsigned B);
     virtual ~PNGWrite();
 
-    operator void*() const { return _valid ? const_cast<PNGRead*>(this) : 0; }
+    operator void*() const { return _valid ? const_cast<PNGWrite*>(this) : 0; }
     bool operator!() const { return !_valid; }
 
     void process(png_bytepp src, bool preview = true);
@@ -36,6 +36,7 @@ private:
 
     png_bytepp _dest;
     size_t _width, _height;
+    unsigned _R, _G, _B;
     bool _valid;
 
     void destroy();
@@ -66,14 +67,14 @@ private:
     };
 };
 
-template <unsigned R, unsigned G, unsigned B>
-class PNGWrite<R, G, B, 0>
+template <>
+class PNGWrite<0>
 {
 public:
-    explicit PNGWrite(size_t width, size_t height);
+    explicit PNGWrite(size_t width, size_t height, unsigned R, unsigned G, unsigned B);
     virtual ~PNGWrite();
 
-    operator void*() const { return _valid ? const_cast<PNGRead*>(this) : 0; }
+    operator void*() const { return _valid ? const_cast<PNGWrite*>(this) : 0; }
     bool operator!() const { return !_valid; }
 
     void process(png_bytepp src, bool preview = true);
@@ -85,6 +86,7 @@ private:
 
     png_bytepp _dest;
     size_t _width, _height;
+    unsigned _R, _G, _B;
     bool _valid;
 
     void destroy();
@@ -113,9 +115,9 @@ private:
 };
 
 
-template <unsigned R, unsigned G, unsigned B, unsigned A>
-PNGWrite<R, G, B, A>::PNGWrite(size_t width, size_t height)
-    : _png(0), _info(0), _dest(0), _width(width), _height(height), _valid(false)
+template <unsigned A>
+PNGWrite<A>::PNGWrite(size_t width, size_t height, unsigned R, unsigned G, unsigned B)
+    : _png(0), _info(0), _dest(0), _width(width), _height(height), _R(R), _G(G), _B(B), _valid(false)
 {
     _dest = new png_bytep[height];
     for (int i = 0; i < height; ++i)
@@ -125,9 +127,8 @@ PNGWrite<R, G, B, A>::PNGWrite(size_t width, size_t height)
     _valid = true;
 };
 
-template <unsigned R, unsigned G, unsigned B>
-PNGWrite<R, G, B, 0>::PNGWrite(size_t width, size_t height)
-    : _png(0), _info(0), _dest(0), _width(width), _height(height), _valid(false)
+PNGWrite<0>::PNGWrite(size_t width, size_t height, unsigned R, unsigned G, unsigned B)
+    : _png(0), _info(0), _dest(0), _width(width), _height(height), _R(R), _G(G), _B(B), _valid(false)
 {
     _dest = new png_bytep[height];
     for (int i = 0; i < height; ++i)
@@ -137,21 +138,21 @@ PNGWrite<R, G, B, 0>::PNGWrite(size_t width, size_t height)
     _valid = true;
 };
 
-template <unsigned R, unsigned G, unsigned B, unsigned A>
-void PNGWrite<R, G, B, A>::process(png_bytepp src, bool preview)
+template <unsigned A>
+void PNGWrite<A>::process(png_bytepp src, bool preview)
 {
-    const int MaxR = (1 << R) - 1;
-    const int MaxG = (1 << G) - 1;
-    const int MaxB = (1 << B) - 1;
+    const int MaxR = (1 << _R) - 1;
+    const int MaxG = (1 << _G) - 1;
+    const int MaxB = (1 << _B) - 1;
     const int MaxA = (1 << A) - 1;
     const int OriginalMax = (1 << 8) - 1;
   
     float f_r, f_g, f_b, f_a;
     if (preview)
     {
-        f_r = 255.0 / (256 - (1 << (8 - R)));
-        f_g = 255.0 / (256 - (1 << (8 - G)));
-        f_b = 255.0 / (256 - (1 << (8 - B)));
+        f_r = 255.0 / (256 - (1 << (8 - _R)));
+        f_g = 255.0 / (256 - (1 << (8 - _G)));
+        f_b = 255.0 / (256 - (1 << (8 - _B)));
         f_a = 255.0 / (256 - (1 << (8 - A)));
     }
     else
@@ -168,9 +169,9 @@ void PNGWrite<R, G, B, A>::process(png_bytepp src, bool preview)
             int old_r, old_g, old_b, old_a;
             get(src, x, y, old_r, old_g, old_b, old_a);
             
-            png_byte new_r = (static_cast<int>(old_r) * MaxR / OriginalMax) << (8 - R);
-            png_byte new_g = (static_cast<int>(old_g) * MaxG / OriginalMax) << (8 - G);
-            png_byte new_b = (static_cast<int>(old_b) * MaxB / OriginalMax) << (8 - B);
+            png_byte new_r = (static_cast<int>(old_r) * MaxR / OriginalMax) << (8 - _R);
+            png_byte new_g = (static_cast<int>(old_g) * MaxG / OriginalMax) << (8 - _G);
+            png_byte new_b = (static_cast<int>(old_b) * MaxB / OriginalMax) << (8 - _B);
             png_byte new_a = (static_cast<int>(old_a) * MaxA / OriginalMax) << (8 - A);
             set(_dest, x, y, f_r * new_r, f_g * new_g, f_b * new_b, f_a * new_a);
 
@@ -211,20 +212,19 @@ void PNGWrite<R, G, B, A>::process(png_bytepp src, bool preview)
     }
 };
 
-template <unsigned R, unsigned G, unsigned B>
-void PNGWrite<R, G, B, 0>::process(png_bytepp src, bool preview)
+void PNGWrite<0>::process(png_bytepp src, bool preview)
 {
-    const int MaxR = (1 << R) - 1;
-    const int MaxG = (1 << G) - 1;
-    const int MaxB = (1 << B) - 1;
+    const int MaxR = (1 << _R) - 1;
+    const int MaxG = (1 << _G) - 1;
+    const int MaxB = (1 << _B) - 1;
     const int OriginalMax = (1 << 8) - 1;
 
     float f_r, f_g, f_b;
     if (preview)
     {
-        f_r = 255.0 / (256 - (1 << (8 - R)));
-        f_g = 255.0 / (256 - (1 << (8 - G)));
-        f_b = 255.0 / (256 - (1 << (8 - B)));
+        f_r = 255.0 / (256 - (1 << (8 - _R)));
+        f_g = 255.0 / (256 - (1 << (8 - _G)));
+        f_b = 255.0 / (256 - (1 << (8 - _B)));
     }
     else
     {
@@ -240,9 +240,9 @@ void PNGWrite<R, G, B, 0>::process(png_bytepp src, bool preview)
             int old_r, old_g, old_b;
             get(src, x, y, old_r, old_g, old_b);
             
-            png_byte new_r = (static_cast<int>(old_r) * MaxR / OriginalMax) << (8 - R);
-            png_byte new_g = (static_cast<int>(old_g) * MaxG / OriginalMax) << (8 - G);
-            png_byte new_b = (static_cast<int>(old_b) * MaxB / OriginalMax) << (8 - B);
+            png_byte new_r = (static_cast<int>(old_r) * MaxR / OriginalMax) << (8 - _R);
+            png_byte new_g = (static_cast<int>(old_g) * MaxG / OriginalMax) << (8 - _G);
+            png_byte new_b = (static_cast<int>(old_b) * MaxB / OriginalMax) << (8 - _B);
 
             set(_dest, x, y, f_r * new_r, f_g * new_g, f_b * new_b);
 
@@ -278,8 +278,8 @@ void PNGWrite<R, G, B, 0>::process(png_bytepp src, bool preview)
     }
 };
 
-template <unsigned R, unsigned G, unsigned B, unsigned A>
-bool PNGWrite<R, G, B, A>::write(const char* filepath)
+template <unsigned A>
+bool PNGWrite<A>::write(const char* filepath)
 {
     FILE *fp = std::fopen(filepath, "wb");
     if (!fp)
@@ -309,8 +309,7 @@ bool PNGWrite<R, G, B, A>::write(const char* filepath)
     return true;
 };
 
-template <unsigned R, unsigned G, unsigned B>
-bool PNGWrite<R, G, B, 0>::write(const char* filepath)
+bool PNGWrite<0>::write(const char* filepath)
 {
     FILE *fp = std::fopen(filepath, "wb");
     if (!fp)
@@ -340,26 +339,24 @@ bool PNGWrite<R, G, B, 0>::write(const char* filepath)
     return true;
 };
 
-template <unsigned R, unsigned G, unsigned B, unsigned A>
-PNGWrite<R, G, B, A>::~PNGWrite()
+template <unsigned A>
+PNGWrite<A>::~PNGWrite()
 {
     destroy();
 };
 
-template <unsigned R, unsigned G, unsigned B>
-PNGWrite<R, G, B, 0>::~PNGWrite()
+PNGWrite<0>::~PNGWrite()
 {
     destroy();
 };
 
-template <unsigned R, unsigned G, unsigned B, unsigned A>
-void PNGWrite<R, G, B, A>::destroy()
+template <unsigned A>
+void PNGWrite<A>::destroy()
 {
     png_destroy_write_struct(&_png, &_info);
 };
 
-template <unsigned R, unsigned G, unsigned B>
-void PNGWrite<R, G, B, 0>::destroy()
+void PNGWrite<0>::destroy()
 {
     png_destroy_write_struct(&_png, &_info);
 }

@@ -33,16 +33,23 @@ PNGは開発者も、デザイナーも簡単に利用できるフォーマッ�
 ビルドの仕方
 ------------
 
-ビルドには下記のライブラリが必要となります:
+ビルドには下記のライブラリが必要となりますが、どちらのソースコードも同梱しています:
 
 * libpng
 * libz
 
-このリポジトリには、MacPorts環境のMac OS XでビルドするためのSConsの設定ファイルが含まれています ::
+このリポジトリには、SConsの設定ファイルがついています。MacPorts環境のMac OS Xでしかテストしてませんが、
+他のSCons/gcc環境でもビルドできると思います ::
 
-   $ sudo port install libpng scons 
+   $ sudo port install scons 
    $ scons
    $ ./lightpng input.png output.png
+
+また、MinGWが使える環境があれば、Windows用のバイナリをクロスコンパイルすることもできます::
+
+   $ sudo port install i386-mingw32-gcc scons
+   $ soncs -f SConstruct.mingw32
+   $ wine lightpng.exe input.png output.png
 
 使用方法
 --------

@@ -1,0 +1,10 @@
+Import('env')
+env.StaticLibrary(
+    'libpng',
+    ['png.c', 'pngset.c', 'pngget.c', 'pngrutil.c', 'pngtrans.c', 
+     'pngwutil.c', 'pngmem.c', 'pngpread.c', 'pngread.c', 'pngerror.c',
+     'pngwrite.c', 'pngrtran.c', 'pngwtran.c', 'pngrio.c', 'pngwio.c'],
+    LIBS=['z'],
+    LIBPATH=['../zlib/'],
+    CPPPATH=['../zlib/']
+)
