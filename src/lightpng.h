@@ -14,4 +14,11 @@ enum ColorMode
     color4444
 };
 
+enum InputFileType
+{
+    NoneFile,
+    PNGFile,
+    JPEGFile
+};
+
 #endif

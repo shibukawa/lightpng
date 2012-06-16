@@ -37,6 +37,7 @@ PNGは開発者も、デザイナーも簡単に利用できるフォーマッ�
 
 * libpng
 * libz
+* jpeglib
 
 このリポジトリには、SConsの設定ファイルがついています。MacPorts環境のMac OS Xでしかテストしてませんが、
 他のSCons/gcc環境でもビルドできると思います ::
@@ -57,6 +58,10 @@ PNGは開発者も、デザイナーも簡単に利用できるフォーマッ�
 コマンドラインから次のように実行します ::
 
    $ lightpng [opt] input_image output_image
+
+``input_image`` は ``.png`` と ``.jpg`` 画像を受け取ることができます。
+
+``output_image`` は ``.png`` でなければなりません。
 
 オプション
 ~~~~~~~~~~

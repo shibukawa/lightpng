@@ -1,13 +1,10 @@
 #include <png.h>
 #include <stdio.h>
-#include <fstream>
 #include <iostream>
 #include "PNGRead.h"
 
 
-PNGRead::PNGRead(const char* filepath)
-    : _png(0), _info(0), _data(0), _width(0), _height(0),
-      _channels(0), _valid(false)
+PNGRead::PNGRead(const char* filepath) : Read(), _png(0), _info(0), _channels(0)
 {
     FILE* fp = fopen(filepath, "rb");
     if (!fp)
@@ -39,7 +36,7 @@ PNGRead::PNGRead(const char* filepath)
     _width = png_get_image_width(_png, _info);
     _height = png_get_image_height(_png, _info);
     _channels = png_get_channels(_png, _info);
-    _data = png_get_rows(_png, _info);
+    _data = static_cast<unsigned char**>(png_get_rows(_png, _info));
 
     _valid = true;
 }

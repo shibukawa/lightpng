@@ -46,6 +46,7 @@ It needs following libraries, but these source code are bundled:
 
 * libpng
 * libz
+* jpeglib
 
 This repository contains a build setting file of SCons. I tested on Mac OS X with MaccPorts environment,
 but maybe work on any scons/gcc environment::
@@ -66,6 +67,9 @@ Usage
 Use this command like this::
 
    $ lightpng [opt] input_image output_image
+
+``input_image`` can accept ``.png`` and ``.jpg`` file.
+``output_image`` should be ``.png``.
 
 Options
 ~~~~~~~

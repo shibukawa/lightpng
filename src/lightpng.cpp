@@ -3,7 +3,9 @@
 #include <zlib.h>
 #include <png.h>
 #include "lightpng.h"
+#include "Read.h"
 #include "PNGRead.h"
+#include "JPEGRead.h"
 #include "PNGWrite.h"
 
 void help()
@@ -38,13 +40,8 @@ bool check_ext(std::string filename, const char* ext)
 }
 
 
-int main(int argc, const char** argv)
+void parseArg(int argc, const char** argv, const char*& input_path, const char*& output_path, Mode& mode, ColorMode& color, InputFileType& inputType)
 {
-    const char* input_path = 0;
-    const char* output_path = 0;
-    Mode mode = textureMode; 
-    ColorMode color = colorAutoDetect; 
-
     for (int i = 1; i < argc; ++i)
     {
         std::string opt(argv[i]);
@@ -74,6 +71,7 @@ int main(int argc, const char** argv)
             if (input_path == 0)
             {
                 input_path = argv[i];
+                inputType = PNGFile;
             }
             else if (output_path == 0)
             {
@@ -81,32 +79,66 @@ int main(int argc, const char** argv)
             }
             else
             {
+                std::cout << "Third file parameter is invalid" << std::endl;
                 mode = helpMode;
                 break;
             }
         }
+        else if (check_ext(opt, ".jpg") || check_ext(opt, ".jpeg"))
+        {
+            if (input_path == 0)
+            {
+                input_path = argv[i];
+                inputType = JPEGFile;
+            }
+            else
+            {
+                std::cout << "JPEG is acceptable only for input" << std::endl;
+                mode = helpMode;
+                break;
+            }
+        }
+        else
+        {
+            std::cout << "Unknow Parameter: " << opt << std::endl;
+            mode = helpMode;
+            break;
+        }
     }
-    if (output_path == 0)
+}
+
+void processImage(const char*& input_path, const char*& output_path, Mode& mode, ColorMode& color, InputFileType& inputType)
+{
+    Read* reader;
+    bool hasAlphaChannel = false;
+
+    if (inputType == PNGFile)
     {
-        mode = helpMode;
+        reader = new PNGRead(input_path);
+        hasAlphaChannel = (dynamic_cast<PNGRead*>(reader)->channels() == 4);
     }
-    if (mode == helpMode)
+    else
     {
-        help();
-        return 1;
+        reader = new JPEGRead(input_path);
     }
-    PNGRead reader(input_path);
-    if (reader)
+
+    if (reader->valid())
     {
-        if (reader.channels() == 3)
+        if (hasAlphaChannel)
         {
             switch (color)
             {
             case colorAutoDetect:
+                {
+                    PNGWrite<1> writer(reader->width(), reader->height(), 5, 5, 5);
+                    writer.process(reader->raw_image(), (mode == previewMode));
+                    writer.write(output_path);
+                }
+                break;
             case color4444:
                 {
-                    PNGWrite<0> writer(reader.width(), reader.height(), 5, 6, 5);
-                    writer.process(reader.raw_image(), (mode == previewMode));
+                    PNGWrite<4> writer(reader->width(), reader->height(), 4, 4, 4);
+                    writer.process(reader->raw_image(), (mode == previewMode));
                     writer.write(output_path);
                 }
                 break;
@@ -117,21 +149,45 @@ int main(int argc, const char** argv)
             switch (color)
             {
             case colorAutoDetect:
-                {
-                    PNGWrite<1> writer(reader.width(), reader.height(), 5, 5, 5);
-                    writer.process(reader.raw_image(), (mode == previewMode));
-                    writer.write(output_path);
-                }
-                break;
             case color4444:
                 {
-                    PNGWrite<4> writer(reader.width(), reader.height(), 4, 4, 4);
-                    writer.process(reader.raw_image(), (mode == previewMode));
+                    PNGWrite<0> writer(reader->width(), reader->height(), 5, 6, 5);
+                    writer.process(reader->raw_image(), (mode == previewMode));
                     writer.write(output_path);
                 }
                 break;
             }
         }
+        delete reader;
     }
+    else
+    {
+        std::cout << "Read error" << std::endl;
+    }
+}
+
+int main(int argc, const char** argv)
+{
+    const char* input_path = 0;
+    const char* output_path = 0;
+    Mode mode = textureMode; 
+    ColorMode color = colorAutoDetect;
+    InputFileType inputType = NoneFile;
+
+    parseArg(argc, argv, input_path, output_path, mode, color, inputType);
+
+    if (output_path == 0)
+    {
+        mode = helpMode;
+    }
+
+    if (mode == helpMode)
+    {
+        help();
+        return 1;
+    }
+
+    processImage(input_path, output_path, mode, color, inputType);
+
     return 0;
 }
