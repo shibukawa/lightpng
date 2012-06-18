@@ -53,32 +53,35 @@ but maybe work on any scons/gcc environment::
 
    $ sudo port install scons 
    $ scons
-   $ ./lightpng input.png output.png
+   $ ./lightpng input.png -16m output.png
 
 If you have MinGW environment, you can build Win32 binary on your environment ::
 
    $ sudo port install i386-mingw32-gcc scons
-   $ soncs -f SConstruct.mingw32
-   $ wine lightpng.exe input.png output.png
+   $ soncs --mingw32
+   $ wine lightpng.exe input.png -16m output.png
 
 Usage
 -----
 
 Use this command like this::
 
-   $ lightpng [opt] input_image output_image
+   $ lightpng [opt] input_image [output_options]
 
 ``input_image`` can accept ``.png`` and ``.jpg`` file.
-``output_image`` should be ``.png``.
 
 Options
 ~~~~~~~
 
 :-t, --texture: Texture Mode (default)
 :-p, --preview: Preview Mode
-:-m, --mask: RGBA 5551 or RGB 565 (default)
-:-a, --alpha: RGBA 4444 (it is ignored if no alpha)
 :-h, --help: Show this message
+
+Output Options
+~~~~~~~~~~~~~~
+
+:-16m PATH: 16 bit PNG with 1 bit alpha (RGBA 5551). If source image doesn't have alpha, it generates RGB 565 PNG.
+:-16a PATH: 16 bit PNG with 4 bit alpha (RGBA 4444). If source image doesn't have alpha, it generates RGB 565 PNG.
 
 Texture Mode / Preview Mode
 ---------------------------
@@ -123,6 +126,39 @@ License
 This source code is released under MIT License.
 
 .. include:: LICENSE.rst
+
+Non-Open Source Version
+-----------------------
+
+This program experimentally supports compressed texture generation (pvr/atc). It needs PVRTexLib and/or AdrenoSDK. They are available here:
+
+* http://www.imgtec.com/powervr/insider/powervr-utilities.asp
+* http://developer.qualcomm.com/develop/
+
+AdrenoSDK is proveded in Windows execution. So you need wine to install and extract needed libraries/headers.
+
+To create this version, set following flags to scons command:
+
+:--no-opensource: Enable Texture Compression format support
+:--PVRTexLib=DIR: Enable PVRTC Texture Compression convert/preview feature. Default is "./PVRTexLib".
+:--AdrenoSDK=DIR: Enable ATITC Texture Compression convert/preview feature. Default is "~/.wine/drive_c/AdrenoSDK".
+
+It adds following output options:
+
+:-pvr PATH: 4 bpp PVRTC compressed texture file
+:-lpvr PATH: 4 bpp PVRTC compressed texture file with legacy format (version 2)
+:-atc PATH: 8 bpp ATITC compressed texture file
+:-fatc PATH: 8 bpp ATITC compressed texture file with header information
+
+If you use this option, use this program for internal use. You can't distribute your modified source code and/or binary in public.
+If you want to reuse my source code to your product, please sent me Amazon.com or Amazon.co.jp e-mail gift to my address (yoshiki at shibu.jp).
+
+I am reading the license of Ardeno SDK, but it maybe prohibit linking with open source tool (legal English is very difficult). If I find any good way to link with open source code, I will merge this code into main.
+
+.. note::
+
+   ``--no-opensource`` and ``--mingw32`` can not be enabled at the same time now.
+   Please anyone tell me how to use closed source .lib via mingw32.
 
 Author
 ------

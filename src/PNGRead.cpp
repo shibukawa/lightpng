@@ -32,11 +32,21 @@ PNGRead::PNGRead(const char* filepath) : Read(), _png(0), _info(0), _channels(0)
         return;
     }
     png_init_io(_png, fp);
-    png_read_png(_png, _info, PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_STRIP_16, NULL);
+    png_read_info(_png, _info);
+    png_set_strip_16(_png);
+    if ((png_get_bit_depth(_png, _info) < 8)
+            || (png_get_color_type(_png, _info) == PNG_COLOR_TYPE_PALETTE)
+            || (png_get_valid(_png, _info, PNG_INFO_tRNS)))
+        png_set_expand(_png);
+
     _width = png_get_image_width(_png, _info);
     _height = png_get_image_height(_png, _info);
     _channels = png_get_channels(_png, _info);
-    _data = static_cast<unsigned char**>(png_get_rows(_png, _info));
+
+    alloc(_channels);
+
+    png_read_image(_png, raw_image());
+    png_read_end(_png, NULL);
 
     _valid = true;
 }

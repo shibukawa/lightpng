@@ -25,20 +25,16 @@ JPEGRead::JPEGRead(const char* filepath) : Read()
     }
     _width = _jpeginfo.output_width;
     _height = _jpeginfo.output_height;
-    
-    JSAMPARRAY raw_data = static_cast<JSAMPARRAY>(new JSAMPROW[_height]);
-    for (int i = 0; i < _height; i++) {
-        raw_data[i] = const_cast<JSAMPROW>(new JSAMPLE[_width * 3]);
-    }
+
+    alloc(3);
 
     while(_jpeginfo.output_scanline < _jpeginfo.output_height)
     {
         jpeg_read_scanlines(&_jpeginfo,
-            raw_data + _jpeginfo.output_scanline,
+            raw_image() + _jpeginfo.output_scanline,
             _jpeginfo.output_height - _jpeginfo.output_scanline
         );
     }
-    _data = static_cast<unsigned char**>(raw_data);
 
     jpeg_finish_decompress(&_jpeginfo);
     fclose(fp);
@@ -52,13 +48,5 @@ JPEGRead::~JPEGRead()
 
 void JPEGRead::destroy()
 {
-    if (_data)
-    {
-        for (int i = 0; i < _height; i++ )
-        {
-            delete[] _data[i];
-        }
-        delete[] _data;
-    }
     jpeg_destroy_decompress(&_jpeginfo);
 }

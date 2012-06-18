@@ -1,6 +1,10 @@
 #ifndef LIGHTPNG_H
 #define LIGHTPNG_H
 
+#include <vector>
+#include <utility>
+#include <string>
+
 enum Mode
 {
     helpMode,
@@ -8,17 +12,19 @@ enum Mode
     previewMode
 };
 
-enum ColorMode
+enum FileType
 {
-    colorAutoDetect,
-    color4444
+    JPEGFile,
+    PNGFile,
+    MaskPNGFile,
+    AlphaPNGFile,
+    PVRFile,
+    LegacyPVRFile,
+    ATCFile,
+    ATCPlusHeaderFile
 };
 
-enum InputFileType
-{
-    NoneFile,
-    PNGFile,
-    JPEGFile
-};
+typedef std::pair<FileType, std::string> output_type;
+typedef std::vector<output_type> output_list;
 
 #endif

@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 #include <zlib.h>
 #include <png.h>
 #include "lightpng.h"
@@ -12,20 +11,25 @@ void help()
 {
     std::cout << "lightpng: PNG optimization tool for game graphics" << std::endl
               << "   Copyright (c) 2012 Yoshiki Shibukawa (DeNA Co.,Ltd, and ngmoco LLC)" << std::endl
+              << "   Open source version" << std::endl
               << std::endl
-              << "  PNG file processing tool to use for texture." << std::endl
-              << "  * It generetes small file size PNG file." << std::endl
-              << "  * It reduce image color to fit 16 bit texture." << std::endl
+              << "Texture file processing tool to use for texture." << std::endl
+              << "  * Generetes small file size 16 bit PNG file." << std::endl
+              << "  * It can generate emulated preview image in PNG format." << std::endl
               << std::endl
-              << "  usage> lightpng [opt] input_image.png output_image.png" << std::endl
+              << "usage> lightpng [options] input_image.png/jpg [output options]" << std::endl
               << std::endl
+              << "  [options]" << std::endl
               << "   -t, --texture : Texture Mode (default)" << std::endl
-              << "   -p, --preview : Preview Mode" << std::endl
+              << "   -p, --preview : Preview Mode. All images are generated in PNG format." << std::endl
+              << "   -h, --help    : Show this message" << std::endl
               << std::endl
-              << "   -m, --mask    : RGBA 5551 or RGB 565 (default)" << std::endl
-              << "   -a, --alpha   : RGBA 4444 (it is ignored if no alpha)" << std::endl
-              << std::endl
-              << "   -h, --help    : Show this message" << std::endl;
+              << "  [output options]" << std::endl
+              << "   -16m PATH    : 16 bit PNG with 1 bit alpha (RGBA 5551)" << std::endl
+              << "                : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
+              << "   -16a PATH    : 16 bit PNG with 4 bit alpha (RGBA 4444)" << std::endl
+              << "                : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
+              << std::endl;
 }
 
 bool check_ext(std::string filename, const char* ext)
@@ -40,8 +44,9 @@ bool check_ext(std::string filename, const char* ext)
 }
 
 
-void parseArg(int argc, const char** argv, const char*& input_path, const char*& output_path, Mode& mode, ColorMode& color, InputFileType& inputType)
+void parseArg(int argc, const char** argv, const char*& input, output_list& outputs, Mode& mode, FileType& inputType)
 {
+    int state = 0;
     for (int i = 1; i < argc; ++i)
     {
         std::string opt(argv[i]);
@@ -50,64 +55,90 @@ void parseArg(int argc, const char** argv, const char*& input_path, const char*&
             mode = helpMode;
             break;
         }
-        else if (opt == "-p" || opt == "--preview")
+        if (state == 0)
         {
-            mode = previewMode;
-        }
-        else if (opt == "-t" || opt == "--texture")
-        {
-            mode = textureMode;
-        }
-        else if (opt == "-m" || opt == "--mask")
-        {
-            color = colorAutoDetect;
-        }
-        else if (opt == "-a" || opt == "--alpha")
-        {
-            color = color4444;
-        }
-        else if (check_ext(opt, ".png"))
-        {
-            if (input_path == 0)
+            if (opt == "-p" || opt == "--preview")
             {
-                input_path = argv[i];
+                mode = previewMode;
+            }
+            else if (opt == "-t" || opt == "--texture")
+            {
+                mode = textureMode;
+            }
+            else if (check_ext(opt, ".png"))
+            {
+                input = argv[i];
                 inputType = PNGFile;
+                state = 1;
             }
-            else if (output_path == 0)
+            else if (check_ext(opt, ".jpg") || check_ext(opt, ".jpeg"))
             {
-                output_path = argv[i];
-            }
-            else
-            {
-                std::cout << "Third file parameter is invalid" << std::endl;
-                mode = helpMode;
-                break;
-            }
-        }
-        else if (check_ext(opt, ".jpg") || check_ext(opt, ".jpeg"))
-        {
-            if (input_path == 0)
-            {
-                input_path = argv[i];
+                input = argv[i];
                 inputType = JPEGFile;
+                state = 1;
             }
             else
             {
-                std::cout << "JPEG is acceptable only for input" << std::endl;
+                std::cout << "Unknow Parameter: " << opt << std::endl;
                 mode = helpMode;
                 break;
             }
         }
-        else
+        else if (state == 1)
         {
-            std::cout << "Unknow Parameter: " << opt << std::endl;
-            mode = helpMode;
-            break;
+            if (opt == "-16a")
+            {
+                i++;
+                if (i == argc)
+                {
+                    std::cout << "-16a needs file path" << std::endl;
+                    mode = helpMode;
+                    break;
+                }
+                std::string path(argv[i]);
+                if (check_ext(path, ".png"))
+                {
+                    outputs.push_back(output_type(AlphaPNGFile, path));       
+                }
+                else
+                {
+                    std::cout << "-16a file should be .png " << path << std::endl;
+                    mode = helpMode;
+                    break;
+                }
+            }
+            else if (opt == "-16m")
+            {
+                i++;
+                if (i == argc)
+                {
+                    std::cout << "-16m needs file path" << std::endl;
+                    mode = helpMode;
+                    break;
+                }
+                std::string path(argv[i]);
+                if (check_ext(path, ".png"))
+                {
+                    outputs.push_back(output_type(MaskPNGFile, path));       
+                }
+                else
+                {
+                    std::cout << "-16m file should be .png " << path << std::endl;
+                    mode = helpMode;
+                    break;
+                }
+            }
+            else
+            {
+                std::cout << "Unknow Parameter: " << opt << std::endl;
+                mode = helpMode;
+                break;
+            }
         }
     }
 }
 
-void processImage(const char*& input_path, const char*& output_path, Mode& mode, ColorMode& color, InputFileType& inputType)
+void processImage(const char*& input_path, output_list& outputs, Mode& mode, FileType& inputType)
 {
     Read* reader;
     bool hasAlphaChannel = false;
@@ -124,41 +155,57 @@ void processImage(const char*& input_path, const char*& output_path, Mode& mode,
 
     if (reader->valid())
     {
-        if (hasAlphaChannel)
+        PNGWrite<1> *mask_png_writer = 0;
+        PNGWrite<4> *alpha_png_writer = 0;
+        PNGWrite<0> *noalpha_png_writer = 0;
+        for (output_list::iterator i = outputs.begin(); i != outputs.end(); ++i)
         {
-            switch (color)
+            FileType outputType = (*i).first;
+            switch (outputType)
             {
-            case colorAutoDetect:
+            case MaskPNGFile:
+                if (hasAlphaChannel)
                 {
-                    PNGWrite<1> writer(reader->width(), reader->height(), 5, 5, 5);
-                    writer.process(reader->raw_image(), (mode == previewMode));
-                    writer.write(output_path);
+                    if (!mask_png_writer)
+                    {
+                        mask_png_writer = new PNGWrite<1>(reader->width(), reader->height(), 5, 5, 5);
+                        mask_png_writer->process(reader->raw_image(), (mode == previewMode));
+                    }
+                    mask_png_writer->write((*i).second.c_str());
+                }
+                else
+                {
+                    if (!noalpha_png_writer)
+                    {
+                        noalpha_png_writer = new PNGWrite<0>(reader->width(), reader->height(), 5, 6, 5);
+                        noalpha_png_writer->process(reader->raw_image(), (mode == previewMode));
+                    }
+                    noalpha_png_writer->write((*i).second.c_str());
                 }
                 break;
-            case color4444:
+            case AlphaPNGFile:
+                if (!alpha_png_writer)
                 {
-                    PNGWrite<4> writer(reader->width(), reader->height(), 4, 4, 4);
-                    writer.process(reader->raw_image(), (mode == previewMode));
-                    writer.write(output_path);
+                    alpha_png_writer = new PNGWrite<4>(reader->width(), reader->height(), 4, 4, 4);
+                    alpha_png_writer->process(reader->raw_image(), (mode == previewMode));
                 }
-                break;
-            }
-        }
-        else
-        {
-            switch (color)
-            {
-            case colorAutoDetect:
-            case color4444:
-                {
-                    PNGWrite<0> writer(reader->width(), reader->height(), 5, 6, 5);
-                    writer.process(reader->raw_image(), (mode == previewMode));
-                    writer.write(output_path);
-                }
+                alpha_png_writer->write((*i).second.c_str());
                 break;
             }
         }
         delete reader;
+        if (mask_png_writer)
+        {
+            delete mask_png_writer;
+        }
+        if (alpha_png_writer)
+        {
+            delete alpha_png_writer;
+        }
+        if (noalpha_png_writer)
+        {
+            delete noalpha_png_writer;
+        }
     }
     else
     {
@@ -169,14 +216,13 @@ void processImage(const char*& input_path, const char*& output_path, Mode& mode,
 int main(int argc, const char** argv)
 {
     const char* input_path = 0;
-    const char* output_path = 0;
+    output_list outputs;
     Mode mode = textureMode; 
-    ColorMode color = colorAutoDetect;
-    InputFileType inputType = NoneFile;
+    FileType inputType;
 
-    parseArg(argc, argv, input_path, output_path, mode, color, inputType);
+    parseArg(argc, argv, input_path, outputs, mode, inputType);
 
-    if (output_path == 0)
+    if (input_path == 0 || outputs.size() == 0)
     {
         mode = helpMode;
     }
@@ -187,7 +233,7 @@ int main(int argc, const char** argv)
         return 1;
     }
 
-    processImage(input_path, output_path, mode, color, inputType);
+    processImage(input_path, outputs, mode, inputType);
 
     return 0;
 }

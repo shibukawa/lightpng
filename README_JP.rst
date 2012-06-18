@@ -44,33 +44,35 @@ PNGは開発者も、デザイナーも簡単に利用できるフォーマッ�
 
    $ sudo port install scons 
    $ scons
-   $ ./lightpng input.png output.png
+   $ ./lightpng input.png -16m output.png
 
 また、MinGWが使える環境があれば、Windows用のバイナリをクロスコンパイルすることもできます::
 
    $ sudo port install i386-mingw32-gcc scons
-   $ soncs -f SConstruct.mingw32
-   $ wine lightpng.exe input.png output.png
+   $ soncs --mingw32
+   $ wine lightpng.exe input.png -16m output.png
 
 使用方法
 --------
 
 コマンドラインから次のように実行します ::
 
-   $ lightpng [opt] input_image output_image
+   $ lightpng [オプション] 入力画像 [出力オプション]
 
-``input_image`` は ``.png`` と ``.jpg`` 画像を受け取ることができます。
-
-``output_image`` は ``.png`` でなければなりません。
+``入力画像`` は ``.png`` と ``.jpg`` 画像を受け取ることができます。
 
 オプション
 ~~~~~~~~~~
 
 :-t, --texture: テクスチャモード (デフォルト)
 :-p, --preview: プレビューモード
-:-m, --mask: RGBA 5551 / RGB 565 (デフォルト)
-:-a, --alpha: RGBA 4444 (アルファチャンネルを持たないデータの場合は無視されます)
 :-h, --help: 使い方を表示します
+
+出力オプション
+~~~~~~~~~~~~~~
+
+:-16m PATH: 1ビットのアルファチャンネルを持つ16ビットのPNG(RGBA 5551)を生成します。もし入力ファイルがアルファチャンネルを持っていなかった場合は、RGB 565のPNGファイルを生成します。
+:-16a PATH: 4ビットのアルファチャンネルを持つ16ビットのPNG(RGBA 4444)を生成します。もし入力ファイルがアルファチャンネルを持っていなかった場合は、RGB 565のPNGファイルを生成します。
 
 テクスチャモード / プレビューモード
 -----------------------------------
@@ -114,6 +116,38 @@ PNGは開発者も、デザイナーも簡単に利用できるフォーマッ�
 このソースコードはMITライセンスでリリースされています。
 
 .. include:: LICENSE.rst
+
+クローズドソースバージョン
+--------------------------
+
+このプログラムは実験的に、圧縮テクスチャ(pvr/atc)の生成もサポートしています。これには、PVRTexLibとAdrenoSDK(どちらか、もしくは両方)が必要になります。
+
+* http://www.imgtec.com/powervr/insider/powervr-utilities.asp
+* http://developer.qualcomm.com/develop/
+
+AdrenoSDKはWindowsの実行形式として提供されています。そのため、SDKを展開して、必要なライブラリやヘッダを取り出すにはwineが必要となります。
+
+クローズドソース版を作成するには、以下のオプションをsconsコマンドに追加してください。
+
+:--no-opensource: 圧縮テクスチャのサポートを有効にします。
+:--PVRTexLib=DIR: PVRTC圧縮テクスチャへの変換・プレビューを有効にします。デフォルトは "./PVRTexLib" です。 
+:--AdrenoSDK=DIR: ATITC圧縮テクスチャへの変換・プレビューを有効にします。デフォルトは "~/.wine/drive_c/AdrenoSDK" です。
+
+このオプションを使ってビルドすると、出力オプションに次の項目が追加されます。
+
+:-pvr PATH: 4 bpp PVRTC圧縮テクスチャ 
+:-lpvr PATH: 4 bpp PVRTC圧縮テクスチャ(version 2のレガシーフォーマット)
+:-atc PATH: 8 bpp ATITC圧縮テクスチャ
+:-fatc PATH: 8 bpp ATITC圧縮テクスチャ(ヘッダ情報つき)
+
+このオプションを有効にして作成したプログラムは、一般公開せず、内部利用のみとしてください。改変したソースコードやバイナリも、一般公開は避けてください。もしこのクローズド版に含まれるコードを流用したい場合は、 yoshiki at shibu.jp まで、Amazon.comかAmazon.co.jpのギフトを送ってください。
+
+現在、Ardeno SDKのライセンスを読んでいますが、オープンソースのプログラムとのリンクを制限するような事項があります。もし良い解決方法があれば、MITライセンスのコードの方にこの機能を取り入れる予定です。
+
+.. note::
+
+   現在は ``--no-opensource`` と ``--mingw32`` を同時に利用することはできません。
+   もし、mingw32でクローズドソースの.libを利用する方法が分かる方はお知らせ下さい。
 
 作者
 ----

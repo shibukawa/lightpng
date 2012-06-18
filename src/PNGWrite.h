@@ -173,7 +173,7 @@ void PNGWrite<A>::process(png_bytepp src, bool preview)
             png_byte new_g = (static_cast<int>(old_g) * MaxG / OriginalMax) << (8 - _G);
             png_byte new_b = (static_cast<int>(old_b) * MaxB / OriginalMax) << (8 - _B);
             png_byte new_a = (static_cast<int>(old_a) * MaxA / OriginalMax) << (8 - A);
-            set(_dest, x, y, f_r * new_r, f_g * new_g, f_b * new_b, f_a * new_a);
+            set(_dest, x, y, static_cast<int>(f_r * new_r), static_cast<int>(f_g * new_g), static_cast<int>(f_b * new_b), static_cast<int>(f_a * new_a));
 
             int dr = std::abs(old_r - new_r);
             int dg = std::abs(old_g - new_g);
@@ -244,7 +244,7 @@ void PNGWrite<0>::process(png_bytepp src, bool preview)
             png_byte new_g = (static_cast<int>(old_g) * MaxG / OriginalMax) << (8 - _G);
             png_byte new_b = (static_cast<int>(old_b) * MaxB / OriginalMax) << (8 - _B);
 
-            set(_dest, x, y, f_r * new_r, f_g * new_g, f_b * new_b);
+            set(_dest, x, y, static_cast<int>(f_r * new_r), static_cast<int>(f_g * new_g), static_cast<int>(f_b * new_b));
 
             int dr = std::abs(old_r - new_r);
             int dg = std::abs(old_g - new_g);
