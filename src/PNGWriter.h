@@ -22,6 +22,8 @@ public:
     void process(unsigned char* raw_buffer);
     void process(unsigned char** image_rows);
     void write(const char* filepath);
+    int compress(size_t parameter_index, bool in_memory_test = true);
+
 private:
     unsigned char* _raw_buffer;
     unsigned char** _image_rows;

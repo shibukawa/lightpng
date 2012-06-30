@@ -29,6 +29,7 @@ AddOption('--AdrenoSDK',
           default='$HOME/.wine/drive_c/AdrenoSDK',
           help='Enable ATITC Texture Compression convert/preview feature. Default is "~/.wine/drive_c/AdrenoSDK".')
 
+sconscript = ['third_party/zlib', 'third_party/libpng', 'third_party/jpeg']
 sources = ['src/PNGReader.cpp', 'src/JPEGReader.cpp', 'src/PNGWriter.cpp']
 libs = ['png', 'z', 'jpeg']
 libpath = ['third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/']
@@ -58,6 +59,12 @@ if GetOption('mingw32'):
     print("@@@ enable mingw32")
     build_target = "win"
     ccflags.append('-D__QT__')
+    sconscript.append('third_party/pthread-w32')
+    cpppath.append('third_party/pthread-w32/')
+    libpath.append('third_party/pthread-w32/')
+    ccflags.append('-DPTW32_STATIC_LIB')
+    libs.append('pthread')
+
 
 if not GetOption('opensource'):
     import os
@@ -110,5 +117,5 @@ if not GetOption('opensource'):
 else:
     sources.insert(0, 'src/lightpng.cpp')
 
-env.SConscript(dirs=['third_party/zlib', 'third_party/libpng', 'third_party/jpeg'])
+env.SConscript(dirs=sconscript)
 env.Program('lightpng', sources, LIBS=libs, LIBPATH=libpath, CPPPATH=cpppath, CCFLAGS=ccflags)
