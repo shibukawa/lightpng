@@ -2,15 +2,16 @@
 #include <zlib.h>
 #include <png.h>
 #include "lightpng.h"
-#include "Read.h"
-#include "PNGRead.h"
-#include "JPEGRead.h"
-#include "PNGWrite.h"
+#include "Image.h"
+#include "PNGReader.h"
+#include "JPEGReader.h"
+#include "ReduceColor.h"
+#include "PNGWriter.h"
 #ifdef PVRTC
-    #include "PVRWrite.h"
+    #include "PVRWriter.h"
 #endif
 #ifdef ATITC
-    #include "ATCWrite.h"
+    #include "ATCWriter.h"
 #endif
 
 void help()
@@ -45,6 +46,7 @@ void help()
               << "                : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
               << "   -16a PATH    : 16 bit PNG with 4 bit alpha (RGBA 4444)" << std::endl
               << "                : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
+              << "   -32 PATH     : 24/32 bit PNG" << std::endl
     #ifdef PVRTC
               << "   -pvr PATH    : 4 bpp PVRTC compressed texture file" << std::endl
               << "   -lpvr PATH   : 4 bpp PVRTC compressed texture file with legacy format (version 2)" << std::endl
@@ -68,7 +70,7 @@ bool check_ext(std::string filename, const char* ext)
 }
 
 
-void parseArg(int argc, const char** argv, const char*& input, output_list& outputs, Mode& mode, FileType& inputType)
+void parse_arg(int argc, const char** argv, const char*& input, output_list& outputs, Mode& mode, FileType& inputType)
 {
     int state = 0;
     for (int i = 1; i < argc; ++i)
@@ -148,6 +150,27 @@ void parseArg(int argc, const char** argv, const char*& input, output_list& outp
                 else
                 {
                     std::cout << "-16m file should be .png " << path << std::endl;
+                    mode = helpMode;
+                    break;
+                }
+            }
+            else if (opt == "-32")
+            {
+                i++;
+                if (i == argc)
+                {
+                    std::cout << "-32 needs file path" << std::endl;
+                    mode = helpMode;
+                    break;
+                }
+                std::string path(argv[i]);
+                if (check_ext(path, ".png"))
+                {
+                    outputs.push_back(output_type(FullColorPNGFile, path));       
+                }
+                else
+                {
+                    std::cout << "-32 file should be .png " << path << std::endl;
                     mode = helpMode;
                     break;
                 }
@@ -314,31 +337,34 @@ void parseArg(int argc, const char** argv, const char*& input, output_list& outp
     }
 }
 
-void processImage(const char*& input_path, output_list& outputs, Mode& mode, FileType& inputType)
+void process_image(const char*& input_path, output_list& outputs, Mode& mode, FileType& inputType)
 {
-    Read* reader;
+    Image* reader;
     bool hasAlphaChannel = false;
 
     if (inputType == PNGFile)
     {
-        reader = new PNGRead(input_path);
-        hasAlphaChannel = (dynamic_cast<PNGRead*>(reader)->channels() == 4);
+        std::cout << "read png" << std::endl;
+        reader = new PNGReader(input_path);
+        hasAlphaChannel = (dynamic_cast<PNGReader*>(reader)->channels() == 4);
+        std::cout << "finish" << std::endl;
     }
     else
     {
-        reader = new JPEGRead(input_path);
+        reader = new JPEGReader(input_path);
     }
 
     if (reader->valid())
     {
-        PNGWrite<1> *mask_png_writer = 0;
-        PNGWrite<4> *alpha_png_writer = 0;
-        PNGWrite<0> *noalpha_png_writer = 0;
+        PNGWriter *mask_png_writer = 0;
+        PNGWriter *alpha_png_writer = 0;
+        PNGWriter *noalpha_png_writer = 0;
+        PNGWriter *fullcolor_png_writer = 0;
         #ifdef PVRTC
-            PVRWrite *pvr_writer = 0;
+            PVRWriter *pvr_writer = 0;
         #endif
         #ifdef ATITC
-            ATCWrite *atc_writer = 0;
+            ATCWriter *atc_writer = 0;
         #endif
         for (output_list::iterator i = outputs.begin(); i != outputs.end(); ++i)
         {
@@ -350,8 +376,8 @@ void processImage(const char*& input_path, output_list& outputs, Mode& mode, Fil
                 {
                     if (!mask_png_writer)
                     {
-                        mask_png_writer = new PNGWrite<1>(reader->width(), reader->height(), 5, 5, 5);
-                        mask_png_writer->process(reader->raw_image(), (mode == previewMode));
+                        mask_png_writer = new PNGWriter(reader, hasAlphaChannel);
+                        mask_png_writer->process(reduce_color<1>(reader, 5, 5, 5, (mode == previewMode)));
                     }
                     mask_png_writer->write((*i).second.c_str());
                 }
@@ -359,25 +385,47 @@ void processImage(const char*& input_path, output_list& outputs, Mode& mode, Fil
                 {
                     if (!noalpha_png_writer)
                     {
-                        noalpha_png_writer = new PNGWrite<0>(reader->width(), reader->height(), 5, 6, 5);
-                        noalpha_png_writer->process(reader->raw_image(), (mode == previewMode));
+                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel);
+                        noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, (mode == previewMode)));
                     }
                     noalpha_png_writer->write((*i).second.c_str());
                 }
                 break;
             case AlphaPNGFile:
-                if (!alpha_png_writer)
+                if (hasAlphaChannel)
                 {
-                    alpha_png_writer = new PNGWrite<4>(reader->width(), reader->height(), 4, 4, 4);
-                    alpha_png_writer->process(reader->raw_image(), (mode == previewMode));
+                    if (!alpha_png_writer)
+                    {
+                        alpha_png_writer = new PNGWriter(reader, hasAlphaChannel);
+                        alpha_png_writer->process(reduce_color<4>(reader, 4, 4, 4, (mode == previewMode)));
+                    }
+                    alpha_png_writer->write((*i).second.c_str());
                 }
-                alpha_png_writer->write((*i).second.c_str());
+                else
+                {
+                    if (!noalpha_png_writer)
+                    {
+                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel);
+                        noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, (mode == previewMode)));
+                    }
+                    noalpha_png_writer->write((*i).second.c_str());
+                }
+                break;
+            case FullColorPNGFile:
+                if (!fullcolor_png_writer)
+                {
+                    fullcolor_png_writer = new PNGWriter(reader, hasAlphaChannel);
+                    std::cout << "start processing" << std::endl;
+                    fullcolor_png_writer->process(reader->raw_image());
+                }
+                std::cout << "start writing" << std::endl;
+                fullcolor_png_writer->write((*i).second.c_str());
                 break;
             #ifdef PVRTC
             case PVRFile:
                 if (!pvr_writer)
                 {
-                    pvr_writer = new PVRWrite(reader->width(), reader->height());
+                    pvr_writer = new PVRWriter(reader->width(), reader->height());
                     pvr_writer->process(reader->raw_buffer(), hasAlphaChannel);
                 }
                 if (mode == previewMode)
@@ -392,7 +440,7 @@ void processImage(const char*& input_path, output_list& outputs, Mode& mode, Fil
             case LegacyPVRFile:
                 if (!pvr_writer)
                 {
-                    pvr_writer = new PVRWrite(reader->width(), reader->height());
+                    pvr_writer = new PVRWriter(reader->width(), reader->height());
                     pvr_writer->process(reader->raw_buffer(), hasAlphaChannel);
                 }
                 if (mode == previewMode)
@@ -409,7 +457,7 @@ void processImage(const char*& input_path, output_list& outputs, Mode& mode, Fil
             case ATCFile:
                 if (!atc_writer)
                 {
-                    atc_writer = new ATCWrite(reader->width(), reader->height());
+                    atc_writer = new ATCWriter(reader->width(), reader->height());
                     atc_writer->process(reader->raw_buffer(), hasAlphaChannel);
                 }
                 if (mode == previewMode)
@@ -424,7 +472,7 @@ void processImage(const char*& input_path, output_list& outputs, Mode& mode, Fil
             case ATCPlusHeaderFile:
                 if (!atc_writer)
                 {
-                    atc_writer = new ATCWrite(reader->width(), reader->height());
+                    atc_writer = new ATCWriter(reader->width(), reader->height());
                     atc_writer->process(reader->raw_buffer(), hasAlphaChannel);
                 }
                 if (mode == previewMode)
@@ -478,7 +526,7 @@ int main(int argc, const char** argv)
     Mode mode = textureMode; 
     FileType inputType;
 
-    parseArg(argc, argv, input_path, outputs, mode, inputType);
+    parse_arg(argc, argv, input_path, outputs, mode, inputType);
 
     if (input_path == 0 || outputs.size() == 0)
     {
@@ -491,7 +539,7 @@ int main(int argc, const char** argv)
         return 1;
     }
 
-    processImage(input_path, outputs, mode, inputType);
+    process_image(input_path, outputs, mode, inputType);
 
     return 0;
 }

@@ -4,8 +4,8 @@
 #include <zlib.h>
 #include <png.h>
 #include <TextureConverter.h>
-#include "ATCWrite.h"
-#include "ExpandRead.h"
+#include "ATCWriterr.h"
+#include "BitChanger.h"
 
 
 TQonvertImage* CreateEmptyTexture()
@@ -30,12 +30,12 @@ void FreeTexture(TQonvertImage* pTexture, bool removeData = false)
     free(pTexture);
 }
 
-ATCWrite::~ATCWrite()
+ATCWriter::~ATCWriter()
 {
     destroy();
 }
 
-void ATCWrite::process(unsigned char* srcRawData, bool hasAlpha)
+void ATCWriter::process(unsigned char* srcRawData, bool hasAlpha)
 {
     _texture = CreateEmptyTexture();
     _texture->nWidth = _width;
@@ -60,7 +60,7 @@ void ATCWrite::process(unsigned char* srcRawData, bool hasAlpha)
     else
     {
         _texture->nFormat = Q_FORMAT_ATITC_RGB;
-        ExpandRead expander(_width, _height, srcRawData);
+        BitChanger expander(_width, _height, srcRawData);
         srcImage->pData = expander.raw_buffer();
         Qonvert(srcImage, _texture);
         _texture->pData = new unsigned char[_texture->nDataSize];
@@ -69,7 +69,7 @@ void ATCWrite::process(unsigned char* srcRawData, bool hasAlpha)
     FreeTexture(srcImage);
 };
 
-void ATCWrite::write(const char* filepath)
+void ATCWriter::write(const char* filepath)
 {
     FILE* out = fopen(filepath, "w");
     if(out)
@@ -79,7 +79,7 @@ void ATCWrite::write(const char* filepath)
     }
 };
 
-void ATCWrite::writeWithHeader(const char* filepath)
+void ATCWriter::writeWithHeader(const char* filepath)
 {
     FILE* out = fopen(filepath, "w");
     if(out)
@@ -90,7 +90,7 @@ void ATCWrite::writeWithHeader(const char* filepath)
     }
 };
 
-void ATCWrite::writeToPNG(const char* filepath)
+void ATCWriter::writeToPNG(const char* filepath)
 {
     TQonvertImage* temp = CreateEmptyTexture();
     temp->nFormat = Q_FORMAT_RGBA_8888;
@@ -139,7 +139,7 @@ void ATCWrite::writeToPNG(const char* filepath)
     delete[] raw_list;
 };
 
-void ATCWrite::destroy()
+void ATCWriter::destroy()
 {
     if (_texture)
     {

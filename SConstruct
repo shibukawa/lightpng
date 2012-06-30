@@ -1,6 +1,11 @@
 env = Environment();
 Export('env')
 
+AddOption('--enable-debug',
+          dest='enabledebug',
+          action='store_true',
+          default=False,
+          help='Debug Build')
 AddOption('--mingw32',
           dest='mingw32',
           action='store_true',
@@ -24,7 +29,7 @@ AddOption('--AdrenoSDK',
           default='$HOME/.wine/drive_c/AdrenoSDK',
           help='Enable ATITC Texture Compression convert/preview feature. Default is "~/.wine/drive_c/AdrenoSDK".')
 
-sources = ['src/PNGRead.cpp', 'src/JPEGRead.cpp']
+sources = ['src/PNGReader.cpp', 'src/JPEGReader.cpp', 'src/PNGWriter.cpp']
 libs = ['png', 'z', 'jpeg']
 libpath = ['third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/']
 cpppath = ['src', 'third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/']
@@ -39,6 +44,14 @@ def fix_path(path):
     return path
 
 build_target = "mac"
+
+if GetOption('enabledebug'):
+    ccflags.append('-g')
+    ccflags.append('-Wall')
+    ccflags.append('-O4')
+else:
+    ccflags.append('-O4')
+
 
 if GetOption('mingw32'):
     env.Tool('crossmingw', toolpath=['tool'])

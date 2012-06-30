@@ -1,7 +1,7 @@
-#ifndef READ_H
-#define READ_H
+#ifndef IMAGE_H
+#define IMAGE_H
 
-class Read
+class Image
 {
 public:
     size_t width() const throw() { return _width; }
@@ -9,11 +9,11 @@ public:
     unsigned char** raw_image() const { return _rows; }
     unsigned char* raw_buffer() const { return _data; }
 
-    operator void*() const { return _valid ? const_cast<Read*>(this) : 0; }
+    operator void*() const { return _valid ? const_cast<Image*>(this) : 0; }
     bool operator!() const { return !_valid; }
     bool valid() const { return _valid; }
 
-    virtual ~Read() {
+    virtual ~Image() {
         if (_data)
         {
             delete[] _data;
@@ -25,7 +25,7 @@ public:
     }
 
 protected:
-    explicit Read() : _data(0), _rows(0), _width(0), _height(0), _valid(false) {}
+    explicit Image() : _data(0), _rows(0), _width(0), _height(0), _valid(false) {}
 
     void alloc(size_t pixelBytes)
     {

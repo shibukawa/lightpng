@@ -3,17 +3,17 @@
 #include <zlib.h>
 #include <png.h>
 #include <PVRTextureUtilities.h>
-#include "PVRWrite.h"
-#include "ExpandRead.h"
+#include "PVRWriter.h"
+#include "BitChanger.h"
 
 using namespace pvrtexture;
 
-PVRWrite::~PVRWrite()
+PVRWriter::~PVRWriter()
 {
     destroy();
 }
 
-void PVRWrite::process(unsigned char* src, bool hasAlpha)
+void PVRWriter::process(unsigned char* src, bool hasAlpha)
 {
     _header = new CPVRTextureHeader(PVRStandard8PixelType.PixelTypeID, _width, _height);
     if (hasAlpha)
@@ -24,24 +24,24 @@ void PVRWrite::process(unsigned char* src, bool hasAlpha)
     }
     else
     {
-        ExpandRead expander(_width, _height, src);
+        BitChanger expander(_width, _height, src);
         PixelType PVRTC4BPP_RGB(ePVRTPF_PVRTCI_4bpp_RGB);
         _pvr = new CPVRTexture(*_header, expander.raw_buffer());
         Transcode(*_pvr, PVRTC4BPP_RGB, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB, ePVRTCBest);
     }
 };
 
-void PVRWrite::write(const char* filepath)
+void PVRWriter::write(const char* filepath)
 {
     _pvr->saveFile(filepath);
 };
 
-void PVRWrite::writeToLegacy(const char* filepath)
+void PVRWriter::writeToLegacy(const char* filepath)
 {
     _pvr->saveFileLegacyPVR(filepath, eOGLES2);
 };
 
-void PVRWrite::writeToPNG(const char* filepath)
+void PVRWriter::writeToPNG(const char* filepath)
 {
     CPVRTexture rawImage(*_pvr);
     Transcode(rawImage, PVRStandard8PixelType, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
@@ -83,7 +83,7 @@ void PVRWrite::writeToPNG(const char* filepath)
     delete[] raw_list;
 };
 
-void PVRWrite::destroy()
+void PVRWriter::destroy()
 {
     if (_pvr)
     {

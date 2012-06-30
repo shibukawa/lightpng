@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <iostream>
-#include "JPEGRead.h"
+#include "JPEGReader.h"
 
-JPEGRead::JPEGRead(const char* filepath) : Read()
+
+JPEGReader::JPEGReader(const char* filepath) : Image()
 {
     jpeg_create_decompress(&_jpeginfo);
     _jpeginfo.err = jpeg_std_error(&_jpegerr);
@@ -41,12 +42,12 @@ JPEGRead::JPEGRead(const char* filepath) : Read()
     _valid = true;
 }
 
-JPEGRead::~JPEGRead()
+JPEGReader::~JPEGReader()
 {
     destroy();
 }
 
-void JPEGRead::destroy()
+void JPEGReader::destroy()
 {
     jpeg_destroy_decompress(&_jpeginfo);
 }

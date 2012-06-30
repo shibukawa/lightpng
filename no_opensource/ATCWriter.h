@@ -1,14 +1,14 @@
-#ifndef ATCWRITE_H
-#define ATCWRITE_H
+#ifndef ATCWRITER_H
+#define ATCWRITER_H
 
 #include <TextureConverter.h>
 
-class ATCWrite
+class ATCWriter
 {
 public:
-    explicit ATCWrite(size_t width, size_t height)
+    explicit ATCWriter(size_t width, size_t height)
         : _texture(0), _width(width), _height(height) {}
-    virtual ~ATCWrite();
+    virtual ~ATCWriter();
 
     void process(unsigned char* src, bool hasAlpha);
     void write(const char* filepath);

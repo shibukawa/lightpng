@@ -1,5 +1,5 @@
-#ifndef PVRWRITE_H
-#define PVRWRITE_H
+#ifndef PVRWRITER_H
+#define PVRWRITER_H
 
 namespace pvrtexture
 {
@@ -7,12 +7,12 @@ namespace pvrtexture
     class CPVRTextureHeader;
 };
 
-class PVRWrite
+class PVRWriter
 {
 public:
-    explicit PVRWrite(size_t width, size_t height)
+    explicit PVRWriter(size_t width, size_t height)
         : _pvr(0), _header(0), _width(width), _height(height) {}
-    virtual ~PVRWrite();
+    virtual ~PVRWriter();
 
     void process(unsigned char* src, bool hasAlpha);
     void write(const char* filepath);

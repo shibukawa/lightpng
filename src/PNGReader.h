@@ -1,15 +1,15 @@
-#ifndef PNGREAD_H
-#define PNGREAD_H
+#ifndef PNGREADER_H
+#define PNGREADER_H
 
 #include <png.h>
 #include "lightpng.h"
-#include "Read.h"
+#include "Image.h"
 
-class PNGRead : public Read
+class PNGReader : public Image
 {
 public:
-    explicit PNGRead(const char* filepath);
-    virtual ~PNGRead();
+    explicit PNGReader(const char* filepath);
+    virtual ~PNGReader();
 
     size_t channels() const throw() { return _channels; }
 

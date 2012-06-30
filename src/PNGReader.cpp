@@ -1,10 +1,10 @@
 #include <png.h>
 #include <stdio.h>
 #include <iostream>
-#include "PNGRead.h"
+#include "PNGReader.h"
 
 
-PNGRead::PNGRead(const char* filepath) : Read(), _png(0), _info(0), _channels(0)
+PNGReader::PNGReader(const char* filepath) : Image(), _png(0), _info(0), _channels(0)
 {
     FILE* fp = fopen(filepath, "rb");
     if (!fp)
@@ -51,12 +51,12 @@ PNGRead::PNGRead(const char* filepath) : Read(), _png(0), _info(0), _channels(0)
     _valid = true;
 }
 
-PNGRead::~PNGRead()
+PNGReader::~PNGReader()
 {
     destroy();
 }
 
-void PNGRead::destroy()
+void PNGReader::destroy()
 {
     png_destroy_read_struct(&_png, &_info, NULL);
 }

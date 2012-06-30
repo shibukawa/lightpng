@@ -1,15 +1,15 @@
-#ifndef JPEGREAD_H
-#define JPEGREAD_H
+#ifndef JPEGREADER_H
+#define JPEGREADER_H
 
 #include <jpeglib.h>
 #include "lightpng.h"
-#include "Read.h"
+#include "Image.h"
 
-class JPEGRead : public Read
+class JPEGReader : public Image
 {
 public:
-    explicit JPEGRead(const char* filepath);
-    ~JPEGRead();
+    explicit JPEGReader(const char* filepath);
+    ~JPEGReader();
 
 private:
     jpeg_decompress_struct _jpeginfo;
