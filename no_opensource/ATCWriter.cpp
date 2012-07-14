@@ -103,7 +103,7 @@ void ATCWriter::writeToPNG(const char* filepath)
 
     png_bytep raw_data = temp->pData;
     png_bytepp raw_list = new png_bytep[_height];
-    for (int i = 0; i < _height; ++i)
+    for (size_t i = 0; i < _height; ++i)
     {
         raw_list[i] = raw_data + (_width * i * 4);
     }

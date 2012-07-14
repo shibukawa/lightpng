@@ -70,7 +70,7 @@ bool check_ext(std::string filename, const char* ext)
 }
 
 
-void parse_arg(int argc, const char** argv, const char*& input, output_list& outputs, Mode& mode, FileType& inputType)
+void parse_arg(int argc, const char** argv, const char*& input, output_list& outputs, Mode& mode, InputFileType& inputType)
 {
     int state = 0;
     for (int i = 1; i < argc; ++i)
@@ -337,17 +337,15 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
     }
 }
 
-void process_image(const char*& input_path, output_list& outputs, Mode& mode, FileType& inputType)
+void process_image(const char*& input_path, output_list& outputs, Mode& mode, InputFileType& inputType)
 {
     Image* reader;
     bool hasAlphaChannel = false;
 
     if (inputType == PNGFile)
     {
-        std::cout << "read png" << std::endl;
         reader = new PNGReader(input_path);
         hasAlphaChannel = (dynamic_cast<PNGReader*>(reader)->channels() == 4);
-        std::cout << "finish" << std::endl;
     }
     else
     {
@@ -368,7 +366,7 @@ void process_image(const char*& input_path, output_list& outputs, Mode& mode, Fi
         #endif
         for (output_list::iterator i = outputs.begin(); i != outputs.end(); ++i)
         {
-            FileType outputType = (*i).first;
+            OutputFileType outputType = (*i).first;
             switch (outputType)
             {
             case MaskPNGFile:
@@ -415,10 +413,8 @@ void process_image(const char*& input_path, output_list& outputs, Mode& mode, Fi
                 if (!fullcolor_png_writer)
                 {
                     fullcolor_png_writer = new PNGWriter(reader, hasAlphaChannel);
-                    std::cout << "start processing" << std::endl;
                     fullcolor_png_writer->process(reader->raw_image());
                 }
-                std::cout << "start writing" << std::endl;
                 fullcolor_png_writer->write((*i).second.c_str());
                 break;
             #ifdef PVRTC
@@ -524,7 +520,7 @@ int main(int argc, const char** argv)
     const char* input_path = 0;
     output_list outputs;
     Mode mode = textureMode; 
-    FileType inputType;
+    InputFileType inputType;
 
     parse_arg(argc, argv, input_path, outputs, mode, inputType);
 

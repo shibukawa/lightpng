@@ -31,7 +31,7 @@ protected:
     {
         _data = new unsigned char[pixelBytes * _width * _height];
         _rows = new unsigned char*[_height];
-        for (int i = 0; i < _height; ++i)
+        for (size_t i = 0; i < _height; ++i)
         {
             _rows[i] = _data + (i * _width * pixelBytes);
         }

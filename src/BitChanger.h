@@ -15,7 +15,7 @@ public:
 
         for (size_t y = 0; y < _height; y++)
         {
-            for (size_t x = 0; x < _height; x++)
+            for (size_t x = 0; x < _width; x++)
             {
                 size_t offset = y * _width + x;
                 _data[offset * 4]     = src[offset * 3];       

@@ -12,10 +12,14 @@ enum Mode
     previewMode
 };
 
-enum FileType
+enum InputFileType
 {
     JPEGFile,
-    PNGFile,
+    PNGFile
+};
+
+enum OutputFileType
+{
     MaskPNGFile,
     AlphaPNGFile,
     FullColorPNGFile,
@@ -25,7 +29,7 @@ enum FileType
     ATCPlusHeaderFile
 };
 
-typedef std::pair<FileType, std::string> output_type;
+typedef std::pair<OutputFileType, std::string> output_type;
 typedef std::vector<output_type> output_list;
 
 #endif

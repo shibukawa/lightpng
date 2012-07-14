@@ -134,7 +134,7 @@ ColorReducer<A>::ColorReducer(size_t width, size_t height, unsigned R, unsigned 
     _rawdest = new unsigned char[4 * width * height];
     _src = new unsigned char*[height];
     _dest = new unsigned char*[height];
-    for (int i = 0; i < _height; ++i)
+    for (size_t i = 0; i < _height; ++i)
     {
         _src[i] = _rawsrc + (i * width * 4);
         _dest[i] = _rawdest + (i * width * 4);
@@ -150,7 +150,7 @@ ColorReducer<0>::ColorReducer(size_t width, size_t height, unsigned R, unsigned 
     _rawdest = new unsigned char[3 * width * height];
     _src = new unsigned char*[height];
     _dest = new unsigned char*[height];
-    for (int i = 0; i < height; ++i)
+    for (size_t i = 0; i < height; ++i)
     {
         _src[i] = _rawsrc + (i * width * 3);
         _dest[i] = _rawdest + (i * width * 3);
@@ -161,7 +161,7 @@ ColorReducer<0>::ColorReducer(size_t width, size_t height, unsigned R, unsigned 
 template <unsigned A>
 void ColorReducer<A>::process(unsigned char** src, bool preview)
 {
-    for (int i = 0; i < _height; ++i)
+    for (size_t i = 0; i < _height; ++i)
     {
         memcpy(_src[i], src[i], _width * 4);
     }
@@ -238,7 +238,7 @@ void ColorReducer<A>::process(unsigned char** src, bool preview)
 
 void ColorReducer<0>::process(unsigned char** src, bool preview)
 {
-    for (int i = 0; i < _height; ++i)
+    for (size_t i = 0; i < _height; ++i)
     {
         memcpy(_src[i], src[i], _width * 3);
     }
@@ -261,9 +261,9 @@ void ColorReducer<0>::process(unsigned char** src, bool preview)
         f_b = 1;
     }
 
-    for (int y = 0; y < _height; ++y)
+    for (size_t y = 0; y < _height; ++y)
     {
-        for (int x = 0; x < _width; ++x)
+        for (size_t x = 0; x < _width; ++x)
         {
             int old_r, old_g, old_b;
             get(_src, x, y, old_r, old_g, old_b);
