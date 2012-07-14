@@ -4,7 +4,7 @@
 #include <zlib.h>
 #include <png.h>
 #include <TextureConverter.h>
-#include "ATCWriterr.h"
+#include "ATCWriter.h"
 #include "BitChanger.h"
 
 

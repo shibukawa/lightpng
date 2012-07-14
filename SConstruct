@@ -76,7 +76,7 @@ if not GetOption('opensource'):
     pvrtexlib = fix_path(GetOption('pvrtexlib'))
     if os.path.exists(pvrtexlib + '/PVRTexture.h'):
         print("@@@ enable PVRTC convert/preview feature")
-        sources.append('no_opensource/PVRWrite.cpp')
+        sources.append('no_opensource/PVRWriter.cpp')
         cpppath.append(pvrtexlib)
         libs.append('PVRTexLib')
         ccflags.append('-DPVRTC')
@@ -95,7 +95,7 @@ if not GetOption('opensource'):
     convpath = os.path.relpath(adrenosdk + '/Tools/Texture Converter/')
     if os.path.exists(convpath):
         print("@@@ enable ATITC convert/preview feature")
-        sources.append('no_opensource/ATCWrite.cpp')
+        sources.append('no_opensource/ATCWriter.cpp')
         cpppath.append(convpath + "/inc/")
         ccflags.append('-DATITC')
         if build_target == "win":

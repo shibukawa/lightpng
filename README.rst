@@ -80,8 +80,9 @@ Options
 Output Options
 ~~~~~~~~~~~~~~
 
-:-16m PATH: 16 bit PNG with 1 bit alpha (RGBA 5551). If source image doesn't have alpha, it generates RGB 565 PNG.
+:-16m PATH : 16 bit PNG with 1 bit alpha (RGBA 5551). If source image doesn't have alpha, it generates RGB 565 PNG.
 :-16a PATH: 16 bit PNG with 4 bit alpha (RGBA 4444). If source image doesn't have alpha, it generates RGB 565 PNG.
+:-32 PATH: 21/32 bit PNG. It tries several compression option and reduce file size.
 
 Texture Mode / Preview Mode
 ---------------------------

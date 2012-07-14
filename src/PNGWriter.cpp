@@ -125,7 +125,7 @@ void* multithread_task::thread_main(void* param)
 {
     multithread_task* self = reinterpret_cast<multithread_task*>(param);
     int parameter_index = self->get_next();
-    while (parameter_index > 0)
+    while (parameter_index != -1)
     {
         size_t size = self->_writer->compress(parameter_index, true);
         self->store_result(size, parameter_index);

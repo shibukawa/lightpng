@@ -1,13 +1,13 @@
-#ifndef EXPAND_READ_H
-#define EXPAND_READ_H
+#ifndef BIT_CHANGER_H
+#define BIT_CHANGER_H
 
-#include "Read.h"
+#include "Image.h"
 
-class ExpandRead : public Read
+class BitChanger : public Image
 {
 public:
-    explicit ExpandRead(size_t width, size_t height, unsigned char* src)
-        : Read()
+    explicit BitChanger(size_t width, size_t height, unsigned char* src)
+        : Image()
     {
         _width = width;
         _height = height;
