@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sys/time.h>
 #include <zlib.h>
 #include <png.h>
 #include "lightpng.h"
@@ -21,9 +22,11 @@ void help()
               << "usage> lightpng [options] input_image.png/jpg [output options]" << std::endl
               << std::endl
               << "  [options]" << std::endl
-              << "   -t, --texture : Texture Mode (default)" << std::endl
-              << "   -p, --preview : Preview Mode. All images are generated in PNG format." << std::endl
-              << "   -h, --help    : Show this message" << std::endl
+              << "   -t, --texture   : Texture Mode (default)" << std::endl
+              << "   -p, --preview   : Preview Mode. All images are generated in PNG format." << std::endl
+              << "   -b, --benchmark : Calc compression time" << std::endl
+              << "   -v, --verbose   : Display compression result" << std::endl
+              << "   -h, --help      : Show this message" << std::endl
               << std::endl
               << "  [output options]" << std::endl
               << "   -16m PATH    : 16 bit PNG with 1 bit alpha (RGBA 5551)" << std::endl
@@ -46,7 +49,15 @@ bool check_ext(std::string filename, const char* ext)
 }
 
 
-void parse_arg(int argc, const char** argv, const char*& input, output_list& outputs, Mode& mode, InputFileType& inputType)
+double get_time(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec + tv.tv_usec * 1e-6;
+}
+
+
+void parse_arg(int argc, const char** argv, const char*& input, output_list& outputs, bool& bench, bool& verbose, Mode& mode, InputFileType& inputType)
 {
     int state = 0;
     for (int i = 1; i < argc; ++i)
@@ -66,6 +77,14 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
             else if (opt == "-t" || opt == "--texture")
             {
                 mode = textureMode;
+            }
+            else if (opt == "-b" || opt == "--benchmark")
+            {
+                bench = true;
+            }
+            else if (opt == "-v" || opt == "--verbose")
+            {
+                verbose = true;
             }
             else if (check_ext(opt, ".png"))
             {
@@ -161,7 +180,8 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
     }
 }
 
-void process_image(const char*& input_path, output_list& outputs, Mode& mode, InputFileType& inputType)
+
+void process_image(const char*& input_path, output_list& outputs, bool bench, bool verbose, Mode& mode, InputFileType& inputType)
 {
     Image* reader;
     bool hasAlphaChannel = false;
@@ -192,8 +212,14 @@ void process_image(const char*& input_path, output_list& outputs, Mode& mode, In
                 {
                     if (!mask_png_writer)
                     {
-                        mask_png_writer = new PNGWriter(reader, hasAlphaChannel);
+                        mask_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
+                        double t1 = get_time(); 
                         mask_png_writer->process(reduce_color<1>(reader, 5, 5, 5, (mode == previewMode)));
+                        if (bench)
+                        {
+                            double t2 = get_time();
+                            std::cout << "16bit PNG compression: " << t2 - t1 << std::endl;
+                        }
                     }
                     mask_png_writer->write((*i).second.c_str());
                 }
@@ -201,8 +227,14 @@ void process_image(const char*& input_path, output_list& outputs, Mode& mode, In
                 {
                     if (!noalpha_png_writer)
                     {
-                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel);
+                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
+                        double t1 = get_time(); 
                         noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, (mode == previewMode)));
+                        if (bench)
+                        {
+                            double t2 = get_time();
+                            std::cout << "16bit PNG compression: " << t2 - t1 << std::endl;
+                        }
                     }
                     noalpha_png_writer->write((*i).second.c_str());
                 }
@@ -212,8 +244,14 @@ void process_image(const char*& input_path, output_list& outputs, Mode& mode, In
                 {
                     if (!alpha_png_writer)
                     {
-                        alpha_png_writer = new PNGWriter(reader, hasAlphaChannel);
+                        alpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
+                        double t1 = get_time(); 
                         alpha_png_writer->process(reduce_color<4>(reader, 4, 4, 4, (mode == previewMode)));
+                        if (bench)
+                        {
+                            double t2 = get_time();
+                            std::cout << "16bit PNG compression: " << t2 - t1 << std::endl;
+                        }
                     }
                     alpha_png_writer->write((*i).second.c_str());
                 }
@@ -221,8 +259,14 @@ void process_image(const char*& input_path, output_list& outputs, Mode& mode, In
                 {
                     if (!noalpha_png_writer)
                     {
-                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel);
+                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
+                        double t1 = get_time(); 
                         noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, (mode == previewMode)));
+                        if (bench)
+                        {
+                            double t2 = get_time();
+                            std::cout << "16bit PNG compression: " << t2 - t1 << std::endl;
+                        }
                     }
                     noalpha_png_writer->write((*i).second.c_str());
                 }
@@ -230,8 +274,14 @@ void process_image(const char*& input_path, output_list& outputs, Mode& mode, In
             case FullColorPNGFile:
                 if (!fullcolor_png_writer)
                 {
-                    fullcolor_png_writer = new PNGWriter(reader, hasAlphaChannel);
+                    fullcolor_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
+                    double t1 = get_time(); 
                     fullcolor_png_writer->process(reader->raw_image());
+                    if (bench)
+                    {
+                        double t2 = get_time();
+                        std::cout << "32bit PNG compression: " << t2 - t1 << std::endl;
+                    }
                 }
                 fullcolor_png_writer->write((*i).second.c_str());
                 break;
@@ -263,8 +313,10 @@ int main(int argc, const char** argv)
     output_list outputs;
     Mode mode = textureMode; 
     InputFileType inputType;
+    bool bench = false;
+    bool verbose = false;
 
-    parse_arg(argc, argv, input_path, outputs, mode, inputType);
+    parse_arg(argc, argv, input_path, outputs, bench, verbose, mode, inputType);
 
     if (input_path == 0 || outputs.size() == 0)
     {
@@ -277,7 +329,7 @@ int main(int argc, const char** argv)
         return 1;
     }
 
-    process_image(input_path, outputs, mode, inputType);
+    process_image(input_path, outputs, bench, verbose, mode, inputType);
 
     return 0;
 }

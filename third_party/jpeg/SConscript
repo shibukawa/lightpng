@@ -1,9 +1,21 @@
 Import('env')
+
+ccflags = ['-O4']
+
+if GetOption('profile_generate'):
+    ccflags.append('-fprofile-generate')
+
+
+if GetOption('profile_use'):
+    ccflags.append('-fprofile-use')
+
+
 env.Library('jpeg',
     ['jaricom.c', 'jcomapi.c', 'jutils.c', 'jerror.c', 'jmemmgr.c', 
      'jmemansi.c', 'jdapimin.c', 'jdapistd.c', 'jdarith.c', 'jdtrans.c',
      'jdatasrc.c', 'jdmaster.c', 'jdinput.c', 'jdmarker.c', 'jdhuff.c',
      'jdmainct.c', 'jdcoefct.c', 'jdpostct.c', 'jddctmgr.c', 'jidctfst.c',
      'jidctflt.c', 'jidctint.c', 'jdsample.c', 'jdcolor.c', 'jquant1.c',
-     'jquant2.c', 'jdmerge.c'])
+     'jquant2.c', 'jdmerge.c'],
+     CCFLAGS = ccflags)
 

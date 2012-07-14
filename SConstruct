@@ -1,11 +1,20 @@
 env = Environment();
 Export('env')
-
 AddOption('--enable-debug',
           dest='enabledebug',
           action='store_true',
           default=False,
           help='Debug Build')
+AddOption('--profile-generate',
+          dest='profile_generate',
+          action='store_true',
+          default=False,
+          help='Generate profile for optimaization')
+AddOption('--profile-use',
+          dest='profile_use',
+          action='store_true',
+          default=False,
+          help='Use generated profile')
 AddOption('--mingw32',
           dest='mingw32',
           action='store_true',
@@ -28,7 +37,7 @@ AddOption('--AdrenoSDK',
           metavar='DIR',
           default='$HOME/.wine/drive_c/AdrenoSDK',
           help='Enable ATITC Texture Compression convert/preview feature. Default is "~/.wine/drive_c/AdrenoSDK".')
-
+    
 sconscript = ['third_party/zlib', 'third_party/libpng', 'third_party/jpeg']
 sources = ['src/PNGReader.cpp', 'src/JPEGReader.cpp', 'src/PNGWriter.cpp']
 libs = ['png', 'z', 'jpeg']
@@ -54,6 +63,14 @@ else:
     ccflags.append('-O4')
 
 
+if GetOption('profile_generate'):
+    ccflags.append('-fprofile-generate')
+
+
+if GetOption('profile_use'):
+    ccflags.append('-fprofile-use')
+
+
 if GetOption('mingw32'):
     env.Tool('crossmingw', toolpath=['tool'])
     print("@@@ enable mingw32")
@@ -66,7 +83,7 @@ if GetOption('mingw32'):
     libs.append('pthread')
 
 
-if not GetOption('opensource'):
+if not env.GetOption('opensource'):
     import os
     enable_texture = False
 

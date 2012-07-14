@@ -1,4 +1,15 @@
 Import('env')
+
+ccflags = ['-O4']
+
+if GetOption('profile_generate'):
+    ccflags.append('-fprofile-generate')
+
+
+if GetOption('profile_use'):
+    ccflags.append('-fprofile-use')
+
+
 env.StaticLibrary(
     'libpng',
     ['png.c', 'pngset.c', 'pngget.c', 'pngrutil.c', 'pngtrans.c', 
@@ -6,5 +17,6 @@ env.StaticLibrary(
      'pngwrite.c', 'pngrtran.c', 'pngwtran.c', 'pngrio.c', 'pngwio.c'],
     LIBS=['z'],
     LIBPATH=['../zlib/'],
-    CPPPATH=['../zlib/']
+    CPPPATH=['../zlib/'],
+    CCFLAGS = ccflags
 )

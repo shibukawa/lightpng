@@ -75,11 +75,6 @@ parameter parameters[24] = {
 
 class multithread_task
 {
-    pthread_mutex_t _mutex;
-    int _next_task;
-    size_t _best_size;
-    int _best_index;
-    PNGWriter* _writer;
 public:
     multithread_task(PNGWriter* writer)
         : _next_task(0), _best_size(1 << 31), _best_index(-1), _writer(writer)
@@ -118,6 +113,13 @@ public:
     size_t best_size() const { return _best_size; }
     int best_index() const { return _best_index; }
     static void* thread_main(void* param);
+
+private:
+    pthread_mutex_t _mutex;
+    int _next_task;
+    size_t _best_size;
+    int _best_index;
+    PNGWriter* _writer;
 };
 
 
@@ -214,8 +216,11 @@ void PNGWriter::process(unsigned char** image_rows)
     int best_index = task.best_index();
     if (best_index > 0)
     {
-        std::cout << "best result: ";
-        parameters[best_index].print(task.best_size());
+        if (_verbose)
+        {
+            std::cout << "best result: ";
+            parameters[best_index].print(task.best_size());
+        }
         _file_size = task.best_size();
         compress(task.best_index(), false);
     }
@@ -280,7 +285,7 @@ int PNGWriter::compress(size_t parameter_index, bool in_memory_test)
     png_write_image(png, _image_rows);
     png_write_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
     png_write_end(png, info);
-    if (in_memory_test)
+    if (in_memory_test && _verbose)
     {
         param->print(file_size);
     }

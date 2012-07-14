@@ -1,4 +1,16 @@
 Import('env')
+
+ccflags = ['-O4']
+
+if GetOption('profile_generate'):
+    ccflags.append('-fprofile-generate')
+
+
+if GetOption('profile_use'):
+    ccflags.append('-fprofile-use')
+
+
 env.Library('z',
     ['adler32.c', 'compress.c', 'crc32.c', 'deflate.c', 'gzclose.c', 'gzlib.c', 'gzread.c',
-     'gzwrite.c', 'infback.c', 'inflate.c', 'inftrees.c', 'inffast.c', 'trees.c', 'uncompr.c', 'zutil.c'])
+     'gzwrite.c', 'infback.c', 'inflate.c', 'inftrees.c', 'inffast.c', 'trees.c', 'uncompr.c', 'zutil.c'],
+     CCFLAGS = ccflags)

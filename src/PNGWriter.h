@@ -10,10 +10,10 @@
 class PNGWriter
 {
 public:
-    PNGWriter(Image* image, bool hasAlphaChannel)
+    PNGWriter(Image* image, bool hasAlphaChannel, bool verbose)
         : _raw_buffer(0), _image_rows(0), _file_content(0),
           _width(0), _height(0), _file_size(0),
-          _hasAlpha(hasAlphaChannel), _valid(0)
+          _hasAlpha(hasAlphaChannel), _verbose(verbose), _valid(0)
     {
         _width = image->width();
         _height = image->height();
@@ -32,6 +32,7 @@ private:
     size_t _height;
     size_t _file_size;
     bool _hasAlpha;
+    bool _verbose;
     bool _valid;
 };
 
