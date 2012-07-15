@@ -76,8 +76,8 @@ parameter parameters[24] = {
 class multithread_task
 {
 public:
-    multithread_task(PNGWriter* writer)
-        : _next_task(0), _best_size(1 << 31), _best_index(-1), _writer(writer)
+    multithread_task(PNGWriter* writer, bool verbose)
+        : _next_task(0), _best_size(1 << 31), _best_index(-1), _writer(writer), _verbose(verbose)
     {
         pthread_mutex_init(&_mutex, NULL);
     }
@@ -108,6 +108,11 @@ public:
             _best_size = size;
             _best_index = index;
         }
+        if (_verbose)
+        {
+            parameter* param = parameters + index;
+            param->print(size);
+        }
         pthread_mutex_unlock(&_mutex);
     }
     size_t best_size() const { return _best_size; }
@@ -120,6 +125,7 @@ private:
     size_t _best_size;
     int _best_index;
     PNGWriter* _writer;
+    bool _verbose;
 };
 
 
@@ -193,7 +199,7 @@ void PNGWriter::process(unsigned char** image_rows)
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    multithread_task task(this);
+    multithread_task task(this, _verbose);
     pthread_t threads[8];
 
     for (size_t i = 0; i < 8; ++i)
@@ -214,7 +220,7 @@ void PNGWriter::process(unsigned char** image_rows)
         }
     }
     int best_index = task.best_index();
-    if (best_index > 0)
+    if (best_index > -1)
     {
         if (_verbose)
         {
@@ -285,11 +291,7 @@ int PNGWriter::compress(size_t parameter_index, bool in_memory_test)
     png_write_image(png, _image_rows);
     png_write_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
     png_write_end(png, info);
-    if (in_memory_test && _verbose)
-    {
-        param->print(file_size);
-    }
-    else
+    if (!in_memory_test)
     {
         _valid = true;
         delete buffer;
