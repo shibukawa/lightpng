@@ -37,21 +37,24 @@ ATCWriter::~ATCWriter()
 
 void ATCWriter::process(unsigned char* srcRawData, bool hasAlpha)
 {
+    BitChanger expander(_width, _height, hasAlpha, srcRawData);
+    _size = expander.height();
+
     _texture = CreateEmptyTexture();
-    _texture->nWidth = _width;
-    _texture->nHeight = _height;
+    _texture->nWidth = _size;
+    _texture->nHeight = _size;
     _texture->nDataSize = 0;
     _texture->pData = NULL; 
 
     TQonvertImage* srcImage = CreateEmptyTexture();
     srcImage->nFormat = Q_FORMAT_RGBA_8888;
-    srcImage->nWidth = _width;
-    srcImage->nHeight = _height;
-    srcImage->nDataSize = _width * _height * 4;
+    srcImage->nWidth = _size;
+    srcImage->nHeight = _size;
+    srcImage->nDataSize = _size * _size * 4;
+    srcImage->pData = expander.raw_buffer();
 
     if (hasAlpha)
     {
-        srcImage->pData = srcRawData;
         _texture->nFormat = Q_FORMAT_ATITC_RGBA;
         Qonvert(srcImage, _texture);
         _texture->pData = new unsigned char[_texture->nDataSize];
@@ -60,8 +63,6 @@ void ATCWriter::process(unsigned char* srcRawData, bool hasAlpha)
     else
     {
         _texture->nFormat = Q_FORMAT_ATITC_RGB;
-        BitChanger expander(_width, _height, srcRawData);
-        srcImage->pData = expander.raw_buffer();
         Qonvert(srcImage, _texture);
         _texture->pData = new unsigned char[_texture->nDataSize];
         Qonvert(srcImage, _texture);
@@ -94,18 +95,17 @@ void ATCWriter::writeToPNG(const char* filepath)
 {
     TQonvertImage* temp = CreateEmptyTexture();
     temp->nFormat = Q_FORMAT_RGBA_8888;
-    temp->nWidth = _width;
-    temp->nHeight = _height;
-    temp->nDataSize = _width * _height * 4;
+    temp->nWidth = _size;
+    temp->nHeight = _size;
+    temp->nDataSize = _size * _size * 4;
+    temp->pData = new unsigned char[temp->nDataSize];
     Qonvert(_texture, temp);
-
-    FreeTexture(temp, true);
 
     png_bytep raw_data = temp->pData;
     png_bytepp raw_list = new png_bytep[_height];
     for (size_t i = 0; i < _height; ++i)
     {
-        raw_list[i] = raw_data + (_width * i * 4);
+        raw_list[i] = raw_data + (_size * i * 4);
     }
 
     FILE *fp = std::fopen(filepath, "wb");
@@ -136,6 +136,7 @@ void ATCWriter::writeToPNG(const char* filepath)
     png_write_image(png, raw_list);
     png_write_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
     png_write_end(png, info);
+    FreeTexture(temp, true);
     delete[] raw_list;
 };
 

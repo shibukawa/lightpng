@@ -7,7 +7,7 @@ class ATCWriter
 {
 public:
     explicit ATCWriter(size_t width, size_t height)
-        : _texture(0), _width(width), _height(height) {}
+        : _texture(0), _width(width), _height(height), _size(0) {}
     virtual ~ATCWriter();
 
     void process(unsigned char* src, bool hasAlpha);
@@ -17,7 +17,7 @@ public:
 
 private:
     TQonvertImage* _texture;
-    size_t _width, _height;
+    size_t _width, _height, _size;
 
     void destroy();
 };

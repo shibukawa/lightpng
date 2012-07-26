@@ -11,7 +11,7 @@ class PVRWriter
 {
 public:
     explicit PVRWriter(size_t width, size_t height)
-        : _pvr(0), _header(0), _width(width), _height(height) {}
+        : _pvr(0), _header(0), _width(width), _height(height), _size(0) {}
     virtual ~PVRWriter();
 
     void process(unsigned char* src, bool hasAlpha);
@@ -22,7 +22,7 @@ public:
 private:
     pvrtexture::CPVRTexture* _pvr;
     pvrtexture::CPVRTextureHeader* _header;
-    size_t _width, _height;
+    size_t _width, _height, _size;
 
     void destroy();
 };

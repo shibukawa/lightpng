@@ -15,46 +15,50 @@ PVRWriter::~PVRWriter()
 
 void PVRWriter::process(unsigned char* src, bool hasAlpha)
 {
-    _header = new CPVRTextureHeader(PVRStandard8PixelType.PixelTypeID, _height, _width);
+    std::cout << _height << std::endl;
+    std::cout << _width << std::endl;
+    bool result;
     if (hasAlpha)
     {
+        BitChanger expander(_width, _height, hasAlpha, src);
+        _size = expander.height();
+        CPVRTextureHeader header(PVRStandard8PixelType.PixelTypeID, _size, _size);
         PixelType PVRTC4BPP_RGBA(ePVRTPF_PVRTCI_4bpp_RGBA);
-        _pvr = new CPVRTexture(*_header, src);
-        Transcode(*_pvr, PVRTC4BPP_RGBA, ePVRTVarTypeUnsignedInteger, ePVRTCSpacelRGB, ePVRTCBest);
+        _pvr = new CPVRTexture(header, src);
+        result = Transcode(*_pvr, PVRTC4BPP_RGBA, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
     }
     else
     {
-        BitChanger expander(_width, _height, src);
+        BitChanger expander(_width, _height, hasAlpha, src);
+        _size = expander.height();
+        CPVRTextureHeader header(PVRStandard8PixelType.PixelTypeID, _size, _size);
         PixelType PVRTC4BPP_RGB(ePVRTPF_PVRTCI_4bpp_RGB);
-        _pvr = new CPVRTexture(*_header, expander.raw_buffer());
-        Transcode(*_pvr, PVRTC4BPP_RGB, ePVRTVarTypeUnsignedInteger, ePVRTCSpacelRGB, ePVRTCBest);
+        _pvr = new CPVRTexture(header, expander.raw_buffer());
+        result = Transcode(*_pvr, PVRTC4BPP_RGB, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
     }
+    std::cout << "is success: " << result << std::endl;
 };
 
 void PVRWriter::write(const char* filepath)
 {
-    std::cout << "PVRWriter::write" << std::endl;
     _pvr->saveFile(filepath);
 };
 
 void PVRWriter::writeToLegacy(const char* filepath)
 {
-    std::cout << "PVRWriter::writeToLegacy" << std::endl;
     _pvr->saveFileLegacyPVR(filepath, eOGLES2);
 };
 
 void PVRWriter::writeToPNG(const char* filepath)
 {
-    std::cout << "PVRWriter::writeToPNG" << std::endl;
     CPVRTexture rawImage(*_pvr);
     Transcode(rawImage, PVRStandard8PixelType, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
     png_bytep raw_data = reinterpret_cast<png_bytep>(rawImage.getDataPtr());
     png_bytepp raw_list = new png_bytep[_height];
     for (size_t i = 0; i < _height; ++i)
     {
-        raw_list[i] = raw_data + (_width * i * 4);
+        raw_list[i] = raw_data + (_size * i * 4);
     }
-
     FILE *fp = std::fopen(filepath, "wb");
     if (!fp)
     {
@@ -75,7 +79,6 @@ void PVRWriter::writeToPNG(const char* filepath)
         std::cout << "Internal Error: " << filepath << std::endl;
         return;
     }
-
     png_init_io(png, fp);
     png_set_compression_level(png, Z_BEST_COMPRESSION);
     png_set_IHDR(png, info, _width, _height, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
@@ -92,10 +95,5 @@ void PVRWriter::destroy()
     {
         delete _pvr;
         _pvr = 0;
-    }
-    if (_header)
-    {
-        delete _header;
-        _header = 0;
     }
 };
