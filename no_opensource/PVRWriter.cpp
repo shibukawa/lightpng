@@ -18,20 +18,17 @@ void PVRWriter::process(unsigned char* src, bool hasAlpha)
     std::cout << _height << std::endl;
     std::cout << _width << std::endl;
     bool result;
+    BitChanger expander(_width, _height, hasAlpha, src);
+    _size = expander.height();
+    CPVRTextureHeader header(PVRStandard8PixelType.PixelTypeID, _size, _size);
     if (hasAlpha)
     {
-        BitChanger expander(_width, _height, hasAlpha, src);
-        _size = expander.height();
-        CPVRTextureHeader header(PVRStandard8PixelType.PixelTypeID, _size, _size);
         PixelType PVRTC4BPP_RGBA(ePVRTPF_PVRTCI_4bpp_RGBA);
-        _pvr = new CPVRTexture(header, src);
+        _pvr = new CPVRTexture(header, expander.raw_buffer());
         result = Transcode(*_pvr, PVRTC4BPP_RGBA, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
     }
     else
     {
-        BitChanger expander(_width, _height, hasAlpha, src);
-        _size = expander.height();
-        CPVRTextureHeader header(PVRStandard8PixelType.PixelTypeID, _size, _size);
         PixelType PVRTC4BPP_RGB(ePVRTPF_PVRTCI_4bpp_RGB);
         _pvr = new CPVRTexture(header, expander.raw_buffer());
         result = Transcode(*_pvr, PVRTC4BPP_RGB, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
