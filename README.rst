@@ -36,7 +36,7 @@ algorithm. So you can easy to create 16 bit texture from this file like it::
 PNG is east to handle for developers and designers. And the result PNG file become
 smaller than the original PNG file. It will help many mobile game developers.
 
-ngCore already supports RGBA5551 and RGB565 format. You can create 16bit ``GL2.Texture``
+ngCore already supports RGBA4444 and RGB565 format. You can create 16bit ``GL2.Texture``
 from this PNG file directly. 
 
 How To Build
@@ -73,16 +73,20 @@ Use this command like this::
 Options
 ~~~~~~~
 
-:-t, --texture: Texture Mode (default)
-:-p, --preview: Preview Mode
+:-b, --benchmark: Display time to process
+:-v, --verbose: Display compression result
 :-h, --help: Show this message
 
 Output Options
 ~~~~~~~~~~~~~~
 
-:-16m PATH : 16 bit PNG with 1 bit alpha (RGBA 5551). If source image doesn't have alpha, it generates RGB 565 PNG.
+:-16m PATH: 16 bit PNG with 1 bit alpha (RGBA 5551). If source image doesn't have alpha, it generates RGB 565 PNG.
 :-16a PATH: 16 bit PNG with 4 bit alpha (RGBA 4444). If source image doesn't have alpha, it generates RGB 565 PNG.
-:-32 PATH: 21/32 bit PNG. It tries several compression option and reduce file size.
+:-16 PATH: It is as same as ``-16a`` .
+:-32 PATH: 24/32 bit PNG. It tries several compression option and reduce file size.
+:-p16m PATH: Preview mode of ``-16m``.
+:-p16a PATH: Preview mode of ``-16a``.
+:-p16 PATH: Preview mode of ``-16``.
 
 Texture Mode / Preview Mode
 ---------------------------
@@ -148,8 +152,10 @@ It adds following output options:
 
 :-pvr PATH: 4 bpp PVRTC compressed texture file
 :-lpvr PATH: 4 bpp PVRTC compressed texture file with legacy format (version 2)
+:-ppvr PATH: Preview mode of PVRTC
 :-atc PATH: 8 bpp ATITC compressed texture file
 :-fatc PATH: 8 bpp ATITC compressed texture file with header information
+:-patc PATH: Preview mode of PVRTC
 
 If you use this option, use this program for internal use. You can't distribute your modified source code and/or binary in public.
 If you want to reuse my source code to your product, please sent me Amazon.com or Amazon.co.jp e-mail gift to my address (yoshiki at shibu.jp).

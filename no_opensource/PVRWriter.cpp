@@ -15,8 +15,6 @@ PVRWriter::~PVRWriter()
 
 void PVRWriter::process(unsigned char* src, bool hasAlpha)
 {
-    std::cout << _height << std::endl;
-    std::cout << _width << std::endl;
     bool result;
     BitChanger expander(_width, _height, hasAlpha, src);
     _size = expander.height();
@@ -33,7 +31,6 @@ void PVRWriter::process(unsigned char* src, bool hasAlpha)
         _pvr = new CPVRTexture(header, expander.raw_buffer());
         result = Transcode(*_pvr, PVRTC4BPP_RGB, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
     }
-    std::cout << "is success: " << result << std::endl;
 };
 
 void PVRWriter::write(const char* filepath)

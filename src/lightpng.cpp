@@ -22,18 +22,19 @@ void help()
               << "usage> lightpng [options] input_image.png/jpg [output options]" << std::endl
               << std::endl
               << "  [options]" << std::endl
-              << "   -t, --texture   : Texture Mode (default)" << std::endl
-              << "   -p, --preview   : Preview Mode. All images are generated in PNG format." << std::endl
-              << "   -b, --benchmark : Calc compression time" << std::endl
+              << "   -b, --benchmark : Display compression time" << std::endl
               << "   -v, --verbose   : Display compression result" << std::endl
               << "   -h, --help      : Show this message" << std::endl
               << std::endl
               << "  [output options]" << std::endl
-              << "   -16m PATH    : 16 bit PNG with 1 bit alpha (RGBA 5551)" << std::endl
-              << "                : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
-              << "   -16a PATH    : 16 bit PNG with 4 bit alpha (RGBA 4444)" << std::endl
-              << "                : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
-              << "   -32 PATH     : 24/32 bit PNG" << std::endl
+              << "   -16a PATH     : 16 bit PNG with 4 bit alpha (RGBA 4444)" << std::endl
+              << "    or -16 PATH  : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
+              << "   -16m PATH     : 16 bit PNG with 1 bit alpha (RGBA 5551)" << std::endl
+              << "                 : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
+              << "   -32 PATH      : 24/32 bit PNG" << std::endl
+              << "   -p16a PATH    : 16 bit PNG with 4 bit alpha (RGBA 4444) preview file" << std::endl
+              << "    or -p16 PATH : 16 bit PNG with 4 bit alpha (RGBA 4444) preview file" << std::endl
+              << "   -p16m PATH    : 16 bit PNG with 1 bit alpha (RGBA 5551) preview file" << std::endl
               << std::endl;
 }
 
@@ -63,26 +64,18 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
     for (int i = 1; i < argc; ++i)
     {
         std::string opt(argv[i]);
-        if (opt == "-h" || opt == "--help")
+        if (opt == "-h" or opt == "--help")
         {
             mode = helpMode;
             break;
         }
         if (state == 0)
         {
-            if (opt == "-p" || opt == "--preview")
-            {
-                mode = previewMode;
-            }
-            else if (opt == "-t" || opt == "--texture")
-            {
-                mode = textureMode;
-            }
-            else if (opt == "-b" || opt == "--benchmark")
+            if (opt == "-b" or opt == "--benchmark")
             {
                 bench = true;
             }
-            else if (opt == "-v" || opt == "--verbose")
+            else if (opt == "-v" or opt == "--verbose")
             {
                 verbose = true;
             }
@@ -92,7 +85,7 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
                 inputType = PNGFile;
                 state = 1;
             }
-            else if (check_ext(opt, ".jpg") || check_ext(opt, ".jpeg"))
+            else if (check_ext(opt, ".jpg") or check_ext(opt, ".jpeg"))
             {
                 input = argv[i];
                 inputType = JPEGFile;
@@ -100,51 +93,65 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
             }
             else
             {
-                std::cout << "Unknow Parameter: " << opt << std::endl;
+                std::cout << "Unknown Parameter: " << opt << std::endl;
                 mode = helpMode;
                 break;
             }
         }
         else if (state == 1)
         {
-            if (opt == "-16a")
+            if ((opt == "-16a") or (opt == "-p16a") or (opt == "-16") or (opt == "-p16"))
             {
                 i++;
                 if (i == argc)
                 {
-                    std::cout << "-16a needs file path" << std::endl;
+                    std::cout << opt << " needs file path" << std::endl;
                     mode = helpMode;
                     break;
                 }
                 std::string path(argv[i]);
                 if (check_ext(path, ".png"))
                 {
-                    outputs.push_back(output_type(AlphaPNGFile, path));       
+                    if (opt == "-16a" or opt == "-16")
+                    {
+                        outputs.push_back(output_type(AlphaPNGFile, path));
+                    }
+                    else
+                    {
+                        outputs.push_back(output_type(PreviewAlphaPNGFile, path));
+                    }
                 }
                 else
                 {
-                    std::cout << "-16a file should be .png " << path << std::endl;
+                    std::cout << opt << " file should be .png " << path << std::endl;
                     mode = helpMode;
                     break;
                 }
             }
-            else if (opt == "-16m")
+            else if ((opt == "-16m") or (opt == "-p16m"))
             {
                 i++;
                 if (i == argc)
                 {
-                    std::cout << "-16m needs file path" << std::endl;
+                    std::cout << opt << " needs file path" << std::endl;
                     mode = helpMode;
                     break;
                 }
                 std::string path(argv[i]);
                 if (check_ext(path, ".png"))
                 {
-                    outputs.push_back(output_type(MaskPNGFile, path));       
+                    if (opt == "-16m")
+                    {
+                        outputs.push_back(output_type(MaskPNGFile, path));
+                    }
+                    else
+                    {
+                        outputs.push_back(output_type(PreviewMaskPNGFile, path));
+                    }
                 }
                 else
                 {
-                    std::cout << "-16m file should be .png " << path << std::endl;
+                    std::cout << opt << " file should be .png " << path << std::endl;
                     mode = helpMode;
                     break;
                 }
@@ -172,7 +179,7 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
             }
             else
             {
-                std::cout << "Unknow Parameter: " << opt << std::endl;
+                std::cout << "Unknown Parameter: " << opt << std::endl;
                 mode = helpMode;
                 break;
             }
@@ -201,6 +208,9 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
         PNGWriter *mask_png_writer = 0;
         PNGWriter *alpha_png_writer = 0;
         PNGWriter *noalpha_png_writer = 0;
+        PNGWriter *preview_mask_png_writer = 0;
+        PNGWriter *preview_alpha_png_writer = 0;
+        PNGWriter *preview_noalpha_png_writer = 0;
         PNGWriter *fullcolor_png_writer = 0;
         for (output_list::iterator i = outputs.begin(); i != outputs.end(); ++i)
         {
@@ -214,7 +224,7 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                     {
                         mask_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
                         double t1 = get_time(); 
-                        mask_png_writer->process(reduce_color<1>(reader, 5, 5, 5, (mode == previewMode)));
+                        mask_png_writer->process(reduce_color<1>(reader, 5, 5, 5, false));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -229,7 +239,7 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                     {
                         noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
                         double t1 = get_time(); 
-                        noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, (mode == previewMode)));
+                        noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, false));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -239,6 +249,38 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                     noalpha_png_writer->write((*i).second.c_str());
                 }
                 break;
+            case PreviewMaskPNGFile:
+                if (hasAlphaChannel)
+                {
+                    if (!preview_mask_png_writer)
+                    {
+                        preview_mask_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
+                        double t1 = get_time(); 
+                        preview_mask_png_writer->process(reduce_color<1>(reader, 5, 5, 5, true));
+                        if (bench)
+                        {
+                            double t2 = get_time();
+                            std::cout << "16bit PNG compression(Preview): " << t2 - t1 << std::endl;
+                        }
+                    }
+                    preview_mask_png_writer->write((*i).second.c_str());
+                }
+                else
+                {
+                    if (!preview_noalpha_png_writer)
+                    {
+                        preview_noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
+                        double t1 = get_time(); 
+                        preview_noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, true));
+                        if (bench)
+                        {
+                            double t2 = get_time();
+                            std::cout << "16bit PNG compression(Preview): " << t2 - t1 << std::endl;
+                        }
+                    }
+                    preview_noalpha_png_writer->write((*i).second.c_str());
+                }
+                break;
             case AlphaPNGFile:
                 if (hasAlphaChannel)
                 {
@@ -246,7 +288,7 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                     {
                         alpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
                         double t1 = get_time(); 
-                        alpha_png_writer->process(reduce_color<4>(reader, 4, 4, 4, (mode == previewMode)));
+                        alpha_png_writer->process(reduce_color<4>(reader, 4, 4, 4, false));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -261,7 +303,7 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                     {
                         noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
                         double t1 = get_time(); 
-                        noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, (mode == previewMode)));
+                        noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, false));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -269,6 +311,38 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                         }
                     }
                     noalpha_png_writer->write((*i).second.c_str());
+                }
+                break;
+            case PreviewAlphaPNGFile:
+                if (hasAlphaChannel)
+                {
+                    if (!preview_alpha_png_writer)
+                    {
+                        preview_alpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
+                        double t1 = get_time(); 
+                        preview_alpha_png_writer->process(reduce_color<4>(reader, 4, 4, 4, true));
+                        if (bench)
+                        {
+                            double t2 = get_time();
+                            std::cout << "16bit PNG compression(Preview): " << t2 - t1 << std::endl;
+                        }
+                    }
+                    preview_alpha_png_writer->write((*i).second.c_str());
+                }
+                else
+                {
+                    if (!preview_noalpha_png_writer)
+                    {
+                        preview_noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
+                        double t1 = get_time(); 
+                        preview_noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, true));
+                        if (bench)
+                        {
+                            double t2 = get_time();
+                            std::cout << "16bit PNG compression(Preview): " << t2 - t1 << std::endl;
+                        }
+                    }
+                    preview_noalpha_png_writer->write((*i).second.c_str());
                 }
                 break;
             case FullColorPNGFile:
@@ -299,6 +373,22 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
         if (noalpha_png_writer)
         {
             delete noalpha_png_writer;
+        }
+        if (fullcolor_png_writer)
+        {
+            delete fullcolor_png_writer;
+        }
+        if (preview_mask_png_writer)
+        {
+            delete preview_mask_png_writer;
+        }
+        if (preview_alpha_png_writer)
+        {
+            delete preview_alpha_png_writer;
+        }
+        if (preview_noalpha_png_writer)
+        {
+            delete preview_noalpha_png_writer;
         }
     }
     else

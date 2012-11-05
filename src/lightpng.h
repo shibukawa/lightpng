@@ -8,8 +8,7 @@
 enum Mode
 {
     helpMode,
-    textureMode,
-    previewMode
+    textureMode
 };
 
 enum InputFileType
@@ -26,7 +25,11 @@ enum OutputFileType
     PVRFile,
     LegacyPVRFile,
     ATCFile,
-    ATCPlusHeaderFile
+    ATCPlusHeaderFile,
+    PreviewMaskPNGFile,
+    PreviewAlphaPNGFile,
+    PreviewPVRFile,
+    PreviewATCFile
 };
 
 typedef std::pair<OutputFileType, std::string> output_type;
