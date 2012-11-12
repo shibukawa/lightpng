@@ -327,7 +327,7 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
                 std::string path(argv[i]);
                 if (check_ext(path, ".png"))
                 {
-                    outputs.push_back(output_type(ATCPlusHeaderFile, path));       
+                    outputs.push_back(output_type(PreviewATCFile, path));       
                 }
                 else
                 {
