@@ -44,6 +44,7 @@ libs = ['png', 'z', 'jpeg']
 libpath = ['third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/']
 cpppath = ['src', 'third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/']
 ccflags = []
+linkflags = []
 
 def fix_path(path):
     import os
@@ -81,7 +82,8 @@ if GetOption('mingw32'):
     libpath.append('third_party/pthread-w32/')
     ccflags.append('-DPTW32_STATIC_LIB')
     libs.append('pthread')
-
+else:
+    linkflags.append('-mmacosx-version-min=10.6')
 
 if not env.GetOption('opensource'):
     import os
@@ -135,4 +137,4 @@ else:
     sources.insert(0, 'src/lightpng.cpp')
 
 env.SConscript(dirs=sconscript)
-env.Program('lightpng', sources, LIBS=libs, LIBPATH=libpath, CPPPATH=cpppath, CCFLAGS=ccflags)
+env.Program('lightpng', sources, LIBS=libs, LIBPATH=libpath, CPPPATH=cpppath, CCFLAGS=ccflags, LINKFLAGS=linkflags)
