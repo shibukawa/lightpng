@@ -59,17 +59,18 @@ build_target = "mac"
 if GetOption('enabledebug'):
     ccflags.append('-g')
     ccflags.append('-Wall')
-    ccflags.append('-O4')
 else:
-    ccflags.append('-O4')
+    ccflags.append('-O3')
 
 
 if GetOption('profile_generate'):
     ccflags.append('-fprofile-generate')
+    linkflags.append('-fprofile-generate')
 
 
 if GetOption('profile_use'):
     ccflags.append('-fprofile-use')
+    linkflags.append('-fprofile-use')
 
 
 if GetOption('mingw32'):

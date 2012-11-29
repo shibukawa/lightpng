@@ -1,6 +1,6 @@
 Import('env')
 
-ccflags = ['-O4']
+ccflags = ['-O3']
 
 if GetOption('profile_generate'):
     ccflags.append('-fprofile-generate')

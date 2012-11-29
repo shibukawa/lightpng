@@ -3,7 +3,8 @@ Import('env')
 ccflags = [
     '-DPTW32_BUILD_INLINED',
     '-DPTW32_STATIC_LIB',
-    '-DHAVE_PTW32_CONFIG_H'
+    '-DHAVE_PTW32_CONFIG_H',
+    '-O3'
 ]
 env.Library('pthread',
     ['pthread.c'], CCFLAGS=ccflags, CPPPATH=['.'])
