@@ -85,9 +85,19 @@ void ATCWriter::writeWithHeader(const char* filepath)
     FILE* out = fopen(filepath, "w");
     if(out)
     {
+        int format = _texture->nFormat;
+        if (_texture->nFormat == Q_FORMAT_ATITC_RGBA)
+        {
+            _texture->nFormat = 20;
+        }
+        else
+        {
+            _texture->nFormat = 21;
+        }
         fwrite(_texture, sizeof(TQonvertImage), 1, out);
         fwrite(_texture->pData, _texture->nDataSize, 1, out);
         fclose(out);
+        _texture->nFormat = format;
     }
 };
 

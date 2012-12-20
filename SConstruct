@@ -1,3 +1,4 @@
+import sys
 env = Environment();
 Export('env')
 AddOption('--enable-debug',
@@ -25,11 +26,16 @@ AddOption('--no-opensource',
           action='store_false',
           default=True,
           help='Enable Texture Compression format support')
+
+if sys.platform == 'win32':
+    default_pvr_path = r'C:\Imagination\PowerVR\GraphicsSDK\PVRTexTool\Library'
+elif sys.platform == 'darwin':
+    default_pvr_path = r'/Applications/Imagination/PowerVR/GraphicsSDK/PVRTexTool/Library'
 AddOption('--PVRTexLib',
           dest='pvrtexlib',
           action='store',
           metavar='DIR',
-          default='./PVRTexLib',
+          default=default_pvr_path,
           help='Enable PVRTC Texture Compression convert/preview feature. Default is "./PVRTexLib".')
 AddOption('--AdrenoSDK',
           dest='adrenosdk',
@@ -84,7 +90,9 @@ if GetOption('mingw32'):
     ccflags.append('-DPTW32_STATIC_LIB')
     libs.append('pthread')
 else:
+    ccflags.append('-m32')
     linkflags.append('-mmacosx-version-min=10.6')
+    linkflags.append('-m32')
 
 if not env.GetOption('opensource'):
     import os
@@ -94,16 +102,16 @@ if not env.GetOption('opensource'):
     cpppath.append("./no_opensource/")
 
     pvrtexlib = fix_path(GetOption('pvrtexlib'))
-    if os.path.exists(pvrtexlib + '/PVRTexture.h'):
+    if os.path.exists(pvrtexlib + '/Include/PVRTexture.h'):
         print("@@@ enable PVRTC convert/preview feature")
         sources.append('no_opensource/PVRWriter.cpp')
-        cpppath.append(pvrtexlib)
+        cpppath.append(pvrtexlib + '/Include')
         libs.append('PVRTexLib')
         ccflags.append('-DPVRTC')
         if build_target == "win":
-            libpath.append(pvrtexlib + '/Windows_x86_32/Lib/')
+            libpath.append(pvrtexlib + r'\\Windows_x86_32\\Lib')
         else:
-            libpath.append(pvrtexlib + '/MacOS_x86/')
+            libpath.append(pvrtexlib + '/OSX_x86/Static/')
         enable_texture = True
     else:
         print("@@@ PVRTC is not supported @@@")
