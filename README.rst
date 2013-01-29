@@ -1,5 +1,5 @@
 lightpng PNG optimization tool for game graphics
-================================================ 
+================================================
 
 Purpose of This Tool
 --------------------
@@ -37,7 +37,7 @@ PNG is east to handle for developers and designers. And the result PNG file beco
 smaller than the original PNG file. It will help many mobile game developers.
 
 ngCore already supports RGBA4444 and RGB565 format. You can create 16bit ``GL2.Texture``
-from this PNG file directly. 
+from this PNG file directly.
 
 How To Build
 ------------
@@ -73,9 +73,10 @@ Use this command like this::
 Options
 ~~~~~~~
 
-:-b, --benchmark: Display time to process
-:-v, --verbose: Display compression result
-:-h, --help: Show this message
+:-s, --skip: Skip PNG file size optimization.
+:-b, --benchmark: Display time to process.
+:-v, --verbose: Display compression result.
+:-h, --help: Show this message.
 
 Output Options
 ~~~~~~~~~~~~~~

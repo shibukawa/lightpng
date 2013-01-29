@@ -1,5 +1,6 @@
 #include "PNGWriter.h"
 #include <iostream>
+#include <vector>
 #include <stdio.h>
 #include <pthread.h>
 #include <zlib.h>
@@ -73,17 +74,73 @@ parameter parameters[24] = {
     { 3,  9, 5 }
 };
 
-class multithread_task
+struct Chunk
+{
+    unsigned char* buffer;
+    size_t size;
+};
+
+class Buffer
 {
 public:
-    multithread_task(PNGWriter* writer, bool verbose)
-        : _next_task(0), _best_size(1 << 31), _best_index(-1), _writer(writer), _verbose(verbose)
+    Buffer() : _totalsize(0) {}
+    ~Buffer() {
+        std::vector<Chunk>::iterator i;
+        for (i = chunks_.begin(); i != chunks_.end(); ++i)
+        {
+            delete[] (*i).buffer;
+        }
+    }
+
+    size_t size() const
+    {
+        return _totalsize;
+    }
+
+    void write(png_bytep data, png_size_t length)
+    {
+        Chunk chunk;
+        chunk.buffer = new png_byte[length];
+        memcpy(chunk.buffer, data, length);
+        chunk.size = length;
+        chunks_.push_back(chunk);
+        _totalsize += length;
+    }
+
+    void flush(unsigned char*& destination, size_t& filesize) const
+    {
+        destination = new png_byte[_totalsize];
+        size_t offset = 0;
+        std::vector<Chunk>::const_iterator i;
+        for (i = chunks_.begin(); i != chunks_.end(); ++i)
+        {
+            memcpy(destination + offset, (*i).buffer, (*i).size);
+            offset += (*i).size;
+        }
+        filesize = _totalsize;
+    }
+
+private:
+    std::vector<Chunk> chunks_;
+    size_t _totalsize;
+};
+
+class MultithreadTask
+{
+public:
+    MultithreadTask(PNGWriter* writer, bool verbose)
+        : _next_task(0), _best_size(1 << 31), _best_index(-1), _writer(writer),
+          _best_result(0), _verbose(verbose)
     {
         pthread_mutex_init(&_mutex, NULL);
     }
-    ~multithread_task()
+    ~MultithreadTask()
     {
         pthread_mutex_destroy(&_mutex);
+        if (_best_result)
+        {
+            delete _best_result;
+        }
     }
     int get_next()
     {
@@ -100,23 +157,34 @@ public:
         pthread_mutex_unlock(&_mutex);
         return result;
     }
-    void store_result(size_t size, size_t index)
+    void store_result(Buffer* buffer, size_t index)
     {
         pthread_mutex_lock(&_mutex);
-        if (size < _best_size)
+        if (buffer->size() < _best_size)
         {
-            _best_size = size;
+            _best_size = buffer->size();
             _best_index = index;
+            if (_best_result)
+            {
+                delete _best_result;
+            }
+            _best_result = buffer;
         }
         if (_verbose)
         {
             parameter* param = parameters + index;
-            param->print(size);
+            param->print(buffer->size());
         }
         pthread_mutex_unlock(&_mutex);
     }
     size_t best_size() const { return _best_size; }
     int best_index() const { return _best_index; }
+    void flush(unsigned char*& file_content, size_t& filesize) const {
+        if (_best_result)
+        {
+            _best_result->flush(file_content, filesize);
+        }
+    }
     static void* thread_main(void* param);
 
 private:
@@ -125,45 +193,35 @@ private:
     size_t _best_size;
     int _best_index;
     PNGWriter* _writer;
+    Buffer* _best_result;
     bool _verbose;
 };
 
 
-void* multithread_task::thread_main(void* param)
+void* MultithreadTask::thread_main(void* param)
 {
-    multithread_task* self = reinterpret_cast<multithread_task*>(param);
+    MultithreadTask* self = reinterpret_cast<MultithreadTask*>(param);
     int parameter_index = self->get_next();
     while (parameter_index != -1)
     {
-        size_t size = self->_writer->compress(parameter_index, true);
-        self->store_result(size, parameter_index);
+        Buffer* buffer = new Buffer();
+        self->_writer->compress(parameter_index, buffer);
+        self->store_result(buffer, parameter_index);
         parameter_index = self->get_next();
     }
     pthread_exit(param);
 }
 
 
-struct png_buffer
-{
-    unsigned char* buffer;
-    size_t position;
-};
-
-void dummy_write(png_structp png_ptr, png_bytep data, png_size_t length)
-{
-    size_t* size = reinterpret_cast<size_t*>(png_get_io_ptr(png_ptr));
-    *size = *size + length;
-}
-
 void dummy_flash(png_structp png_ptr)
 {
 }
 
+
 void buffer_write(png_structp png_ptr, png_bytep data, png_size_t length)
 {
-    png_buffer* png = reinterpret_cast<png_buffer*>(png_get_io_ptr(png_ptr));
-    memcpy(png->buffer + png->position, data, length);
-    png->position += length;
+    Buffer* buffer = reinterpret_cast<Buffer*>(png_get_io_ptr(png_ptr));
+    buffer->write(data, length);
 }
 
 
@@ -184,7 +242,7 @@ void PNGWriter::process(unsigned char* raw_buffer)
 {
     _raw_buffer = raw_buffer;
     _image_rows = new unsigned char*[_height];
-    size_t pixelSize = (_hasAlpha) ? 4 : 3;
+    size_t pixelSize = (_has_alpha) ? 4 : 3;
     for (size_t i = 0; i < _height; ++i)
     {
         _image_rows[i] = raw_buffer + i * _width * pixelSize;
@@ -195,40 +253,51 @@ void PNGWriter::process(unsigned char* raw_buffer)
 void PNGWriter::process(unsigned char** image_rows)
 {
     _image_rows = image_rows;
-    int rc;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    multithread_task task(this, _verbose);
-    pthread_t threads[8];
 
-    for (size_t i = 0; i < 8; ++i)
+    if (_optimize)
     {
-        rc = pthread_create(&threads[i], &attr, multithread_task::thread_main, reinterpret_cast<void*>(&task));
-        if (rc)
+        int rc;
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+        MultithreadTask task(this, _verbose);
+        pthread_t threads[8];
+        for (size_t i = 0; i < 8; ++i)
         {
-            std::cout << "pthread create error" << std::endl;
+            rc = pthread_create(&threads[i], &attr, MultithreadTask::thread_main, reinterpret_cast<void*>(&task));
+            if (rc)
+            {
+                std::cout << "pthread create error" << std::endl;
+            }
+        }
+        for (size_t i = 0; i < 8; ++i)
+        {
+            void* status;
+            rc = pthread_join(threads[i], &status);
+            if (rc)
+            {
+                std::cout << "pthread join error" << std::endl;
+            }
+        }
+        int best_index = task.best_index();
+        if (best_index > -1)
+        {
+            if (_verbose)
+            {
+                std::cout << "best result: ";
+                parameters[best_index].print(task.best_size());
+            }
+            task.flush(_file_content, _file_size);
+            _valid = true;
         }
     }
-    for (size_t i = 0; i < 8; ++i)
+    else
     {
-        void* status;
-        rc = pthread_join(threads[i], &status);
-        if (rc)
-        {
-            std::cout << "pthread join error" << std::endl;
-        }
-    }
-    int best_index = task.best_index();
-    if (best_index > -1)
-    {
-        if (_verbose)
-        {
-            std::cout << "best result: ";
-            parameters[best_index].print(task.best_size());
-        }
-        _file_size = task.best_size();
-        compress(task.best_index(), false);
+        Buffer* buffer = new Buffer();
+        compress(0, buffer);
+        buffer->flush(_file_content, _file_size);
+        delete buffer;
+        _valid = true;
     }
 }
 
@@ -243,41 +312,30 @@ void PNGWriter::write(const char* filepath)
 }
 
 
-int PNGWriter::compress(size_t parameter_index, bool in_memory_test)
+void PNGWriter::compress(size_t parameter_index, Buffer* buffer)
 {
     png_structp png = 0;
     png_infop info = 0;
-    int file_size = 0;
-    png_buffer* buffer = 0;
     png = png_create_write_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
     if (!png)
     {
-        return -1;
+        return;
     }
     info = png_create_info_struct(png);
     if (!info)
     {
-        return -1;
+        return;
     }
-    if (in_memory_test)
-    {
-        png_set_write_fn(png, reinterpret_cast<void*>(&file_size), dummy_write, dummy_flash);
-    }
-    else
-    {
-        buffer = new png_buffer;
-        _file_content = new unsigned char[_file_size];
-        buffer->buffer = _file_content;
-        buffer->position = 0;
-        png_set_write_fn(png, reinterpret_cast<void*>(buffer), buffer_write, dummy_flash);
-    }
+
+    png_set_write_fn(png, reinterpret_cast<void*>(buffer), buffer_write, dummy_flash);
+
     parameter* param = parameters + parameter_index;
     png_set_compression_strategy(png, param->get_strategy());
     png_set_compression_window_bits(png, param->get_window_bits());
     png_set_filter(png, PNG_FILTER_TYPE_BASE, param->get_filter());
     png_set_compression_level(png, Z_BEST_COMPRESSION);
     png_set_compression_mem_level(png, MAX_MEM_LEVEL);
-    if (_hasAlpha)
+    if (_has_alpha)
     {
         png_set_IHDR(png, info, _width, _height, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
             PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
@@ -291,10 +349,4 @@ int PNGWriter::compress(size_t parameter_index, bool in_memory_test)
     png_write_image(png, _image_rows);
     png_write_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
     png_write_end(png, info);
-    if (!in_memory_test)
-    {
-        _valid = true;
-        delete buffer;
-    }
-    return file_size;
 };

@@ -22,6 +22,7 @@ void help()
               << "usage> lightpng [options] input_image.png/jpg [output options]" << std::endl
               << std::endl
               << "  [options]" << std::endl
+              << "   -s, --skip      : Skip optimization for PNG file size" << std::endl
               << "   -b, --benchmark : Display compression time" << std::endl
               << "   -v, --verbose   : Display compression result" << std::endl
               << "   -h, --help      : Show this message" << std::endl
@@ -58,7 +59,7 @@ double get_time(void)
 }
 
 
-void parse_arg(int argc, const char** argv, const char*& input, output_list& outputs, bool& bench, bool& verbose, Mode& mode, InputFileType& inputType)
+void parse_arg(int argc, const char** argv, const char*& input, output_list& outputs, bool& optimize, bool& bench, bool& verbose, Mode& mode, InputFileType& inputType)
 {
     int state = 0;
     for (int i = 1; i < argc; ++i)
@@ -71,7 +72,11 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
         }
         if (state == 0)
         {
-            if (opt == "-b" or opt == "--benchmark")
+            if (opt == "-s" or opt == "--skip")
+            {
+                optimize = false;
+            }
+            else if (opt == "-b" or opt == "--benchmark")
             {
                 bench = true;
             }
@@ -188,7 +193,7 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
 }
 
 
-void process_image(const char*& input_path, output_list& outputs, bool bench, bool verbose, Mode& mode, InputFileType& inputType)
+void process_image(const char*& input_path, output_list& outputs, bool optimize, bool bench, bool verbose, Mode& mode, InputFileType& inputType)
 {
     Image* reader;
     bool hasAlphaChannel = false;
@@ -222,8 +227,8 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                 {
                     if (!mask_png_writer)
                     {
-                        mask_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
-                        double t1 = get_time(); 
+                        mask_png_writer = new PNGWriter(reader, hasAlphaChannel, optimize, verbose);
+                        double t1 = get_time();
                         mask_png_writer->process(reduce_color<1>(reader, 5, 5, 5, false));
                         if (bench)
                         {
@@ -237,8 +242,8 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                 {
                     if (!noalpha_png_writer)
                     {
-                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
-                        double t1 = get_time(); 
+                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, optimize, verbose);
+                        double t1 = get_time();
                         noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, false));
                         if (bench)
                         {
@@ -254,8 +259,8 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                 {
                     if (!preview_mask_png_writer)
                     {
-                        preview_mask_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
-                        double t1 = get_time(); 
+                        preview_mask_png_writer = new PNGWriter(reader, hasAlphaChannel, false, verbose);
+                        double t1 = get_time();
                         preview_mask_png_writer->process(reduce_color<1>(reader, 5, 5, 5, true));
                         if (bench)
                         {
@@ -269,8 +274,8 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                 {
                     if (!preview_noalpha_png_writer)
                     {
-                        preview_noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
-                        double t1 = get_time(); 
+                        preview_noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, false, verbose);
+                        double t1 = get_time();
                         preview_noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, true));
                         if (bench)
                         {
@@ -286,8 +291,8 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                 {
                     if (!alpha_png_writer)
                     {
-                        alpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
-                        double t1 = get_time(); 
+                        alpha_png_writer = new PNGWriter(reader, hasAlphaChannel, optimize, verbose);
+                        double t1 = get_time();
                         alpha_png_writer->process(reduce_color<4>(reader, 4, 4, 4, false));
                         if (bench)
                         {
@@ -301,8 +306,8 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                 {
                     if (!noalpha_png_writer)
                     {
-                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
-                        double t1 = get_time(); 
+                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, optimize, verbose);
+                        double t1 = get_time();
                         noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, false));
                         if (bench)
                         {
@@ -318,8 +323,8 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                 {
                     if (!preview_alpha_png_writer)
                     {
-                        preview_alpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
-                        double t1 = get_time(); 
+                        preview_alpha_png_writer = new PNGWriter(reader, hasAlphaChannel, false, verbose);
+                        double t1 = get_time();
                         preview_alpha_png_writer->process(reduce_color<4>(reader, 4, 4, 4, true));
                         if (bench)
                         {
@@ -333,8 +338,8 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
                 {
                     if (!preview_noalpha_png_writer)
                     {
-                        preview_noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
-                        double t1 = get_time(); 
+                        preview_noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, false, verbose);
+                        double t1 = get_time();
                         preview_noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, true));
                         if (bench)
                         {
@@ -348,8 +353,8 @@ void process_image(const char*& input_path, output_list& outputs, bool bench, bo
             case FullColorPNGFile:
                 if (!fullcolor_png_writer)
                 {
-                    fullcolor_png_writer = new PNGWriter(reader, hasAlphaChannel, verbose);
-                    double t1 = get_time(); 
+                    fullcolor_png_writer = new PNGWriter(reader, hasAlphaChannel, true, verbose);
+                    double t1 = get_time();
                     fullcolor_png_writer->process(reader->raw_image());
                     if (bench)
                     {
@@ -401,12 +406,13 @@ int main(int argc, const char** argv)
 {
     const char* input_path = 0;
     output_list outputs;
-    Mode mode = textureMode; 
+    Mode mode = textureMode;
     InputFileType inputType;
+    bool optimize = true;
     bool bench = false;
     bool verbose = false;
 
-    parse_arg(argc, argv, input_path, outputs, bench, verbose, mode, inputType);
+    parse_arg(argc, argv, input_path, outputs, optimize, bench, verbose, mode, inputType);
 
     if (input_path == 0 || outputs.size() == 0)
     {
@@ -419,7 +425,7 @@ int main(int argc, const char** argv)
         return 1;
     }
 
-    process_image(input_path, outputs, bench, verbose, mode, inputType);
+    process_image(input_path, outputs, optimize, bench, verbose, mode, inputType);
 
     return 0;
 }
