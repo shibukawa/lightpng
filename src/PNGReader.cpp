@@ -33,15 +33,50 @@ PNGReader::PNGReader(const char* filepath) : Image(), _png(0), _info(0), _channe
     }
     png_init_io(_png, fp);
     png_read_info(_png, _info);
-    png_set_strip_16(_png);
-    if ((png_get_bit_depth(_png, _info) < 8)
-            || (png_get_color_type(_png, _info) == PNG_COLOR_TYPE_PALETTE)
-            || (png_get_valid(_png, _info, PNG_INFO_tRNS)))
-        png_set_expand(_png);
+    if (png_get_color_type(_png, _info) == PNG_COLOR_TYPE_PALETTE)
+    {
+        png_set_palette_to_rgb(_png);
+        if (png_get_valid(_png, _info, PNG_INFO_tRNS))
+        {
+            png_set_tRNS_to_alpha(_png);
+            _channels = 4;
+        }
+        else
+        {
+            _channels = 3;
+        }
+    }
+    else if (png_get_color_type(_png, _info) == PNG_COLOR_TYPE_GRAY)
+    {
+        std::cout << "gray scale color" << std::endl;
+        png_set_gray_to_rgb(_png);
+        if (png_get_valid(_png, _info, PNG_INFO_tRNS))
+        {
+            std::cout << "it has transparent information" << std::endl;
+            png_set_tRNS_to_alpha(_png);
+            _channels = 4;
+        }
+        else
+        {
+            _channels = 3;
+        }
+    }
+    else
+    {
+        int bitdepth = png_get_bit_depth(_png, _info);
+        if (bitdepth == 16)
+        {
+            png_set_strip_16(_png);
+        }
+        else if ((bitdepth < 8) || (png_get_valid(_png, _info, PNG_INFO_tRNS)))
+        {
+            png_set_expand(_png);
+        }
+        _channels = png_get_channels(_png, _info);
+    }
 
     _width = png_get_image_width(_png, _info);
     _height = png_get_image_height(_png, _info);
-    _channels = png_get_channels(_png, _info);
 
     alloc(_channels);
 
