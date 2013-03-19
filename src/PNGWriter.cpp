@@ -261,14 +261,28 @@ void PNGWriter::process(unsigned char* raw_buffer)
 
 void PNGWriter::process(unsigned char* raw_buffer, png_color* palette, unsigned char* trans)
 {
-    PaletteOptimizer optimizer(_width, _height);
-    optimizer.process8bit(raw_buffer, palette, trans);
-    _raw_buffer = optimizer.delegate_rawimage();
-    _palette = optimizer.delegate_palette();
-    _trans = optimizer.delegate_trans();
     _index = true;
-    _palette_size = optimizer.palette_size();
-    _trans_size = optimizer.trans_size();
+    if (true) // optimize
+    {
+        PaletteOptimizer optimizer(_width, _height);
+        optimizer.process8bit(raw_buffer, palette, trans);
+        _raw_buffer = optimizer.delegate_rawimage();
+        _palette = optimizer.delegate_palette();
+        _trans = optimizer.delegate_trans();
+        _palette_size = optimizer.palette_size();
+        _trans_size = optimizer.trans_size();
+        delete[] raw_buffer;
+        delete[] palette;
+        delete[] trans;
+    }
+    else
+    {
+        _raw_buffer = raw_buffer;
+        _palette = palette;
+        _trans = trans;
+        _palette_size = 255;
+        _trans_size = 255;
+    }
     //std::cout << "palette size: " << _palette_size << std::endl;
     //std::cout << "trans size: " << _trans_size << std::endl;
     _image_rows = new unsigned char*[_height];
@@ -276,9 +290,6 @@ void PNGWriter::process(unsigned char* raw_buffer, png_color* palette, unsigned 
     {
         _image_rows[i] = _raw_buffer + i * _width;
     }
-    delete[] raw_buffer;
-    delete[] palette;
-    delete[] trans;
     process(_image_rows);
 }
 

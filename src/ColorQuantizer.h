@@ -49,7 +49,6 @@ public:
 
 private:
     unsigned char** _src;
-    unsigned char** _dest;
     unsigned char* _rawsrc;
     unsigned char* _rawdest;
     size_t _width, _height;
@@ -63,17 +62,15 @@ private:
 };
 
 ColorQuantizer::ColorQuantizer(size_t width, size_t height)
-    : _src(0), _dest(0), _rawsrc(0), _rawdest(0),
+    : _src(0), _rawsrc(0), _rawdest(0),
       _width(width), _height(height), _transnum(0), _valid(false), _palette(0), _trans(0)
 {
     _rawsrc = new unsigned char[4 * width * height];
     _rawdest = new unsigned char[width * height];
     _src = new unsigned char*[height];
-    _dest = new unsigned char*[height];
     for (size_t i = 0; i < _height; ++i)
     {
         _src[i] = _rawsrc + (i * width * 4);
-        _dest[i] = _rawdest + (i * width);
     }
     _valid = true;
     _palette = new png_color[256];
@@ -84,7 +81,7 @@ void ColorQuantizer::process(unsigned char** src)
 {
     for (size_t i = 0; i < _height; ++i)
     {
-        memcpy(_src[i], src[i], _width * 3);
+        memcpy(_src[i], src[i], _width * 4);
     }
     size_t bot_idx, top_idx;  // for remapping of indices
     size_t x;
@@ -147,21 +144,22 @@ void ColorQuantizer::remap_floyd(unsigned char map[MAXNETSIZE][4], size_t* remap
         nextoffset = offset;
         if (y + 1 < _height)
         {
-            nextoffset  += _width * 4;
+            nextoffset += _width * 4;
         }
         int increment = 4;
 
-        for (size_t i = 0; i < _width; i++ , offset  += increment, nextoffset  += increment)
+        for (size_t i = 0; i < _width; i++, offset += increment, nextoffset += increment)
         {
             int idx;
             unsigned int floyderr = rerr * rerr + gerr * gerr + berr * berr + aerr * aerr;
+
+            size_t x = increment > 0 ? i : _width - i - 1;
 
             idx = inxsearch(CLAMP(_rawsrc[offset + 3] - aerr),
                             CLAMP(_rawsrc[offset + 2] - berr),
                             CLAMP(_rawsrc[offset + 1] - gerr),
                             CLAMP(_rawsrc[offset]     - rerr));
 
-            size_t x = increment > 0 ? i : _width - i - 1;
             _rawdest[y * _width + x] = remap[idx];
 
             int alpha = std::max(map[idx][3], _rawsrc[offset + 3]);
@@ -172,10 +170,10 @@ void ColorQuantizer::remap_floyd(unsigned char map[MAXNETSIZE][4], size_t* remap
             int thisgerr = (map[idx][2] - _rawsrc[offset + 2]) * colorimp / 255;
             int thisaerr = map[idx][3] - _rawsrc[offset + 3];
 
-            rerr  += thisrerr;
-            gerr  += thisberr;
-            berr  +=  thisgerr;
-            aerr  += thisaerr;
+            rerr += thisrerr;
+            gerr += thisberr;
+            berr += thisgerr;
+            aerr += thisaerr;
 
             unsigned int thiserr = (thisrerr * thisrerr + thisberr * thisberr + thisgerr * thisgerr + thisaerr * thisaerr) * 2;
             floyderr = rerr * rerr + gerr * gerr + berr * berr + aerr * aerr;
@@ -184,10 +182,10 @@ void ColorQuantizer::remap_floyd(unsigned char map[MAXNETSIZE][4], size_t* remap
             while (rerr * rerr > L * L || gerr * gerr > L * L || berr * berr > L * L || aerr * aerr > L * L ||
                    floyderr > thiserr || floyderr > L * L * 2)
             {
-                rerr /=  2;
-                gerr /=  2;
-                berr /=  2;
-                aerr /=  2;
+                rerr /= 2;
+                gerr /= 2;
+                berr /= 2;
+                aerr /= 2;
                 floyderr = rerr * rerr + gerr * gerr + berr * berr + aerr * aerr;
             }
 
@@ -198,7 +196,7 @@ void ColorQuantizer::remap_floyd(unsigned char map[MAXNETSIZE][4], size_t* remap
                 _rawsrc[nextoffset - increment + 1] = CLAMP(_rawsrc[nextoffset - increment + 1] - gerr * 3 / 16);
                 _rawsrc[nextoffset - increment]     = CLAMP(_rawsrc[nextoffset - increment]     - rerr * 3 / 16);
             }
-            if (i + 1<_width)
+            if (i + 1 < _width)
             {
                 _rawsrc[nextoffset + increment + 3] = CLAMP(_rawsrc[nextoffset + increment + 3] - aerr / 16);
                 _rawsrc[nextoffset + increment + 2] = CLAMP(_rawsrc[nextoffset + increment + 2] - berr / 16);
@@ -206,9 +204,9 @@ void ColorQuantizer::remap_floyd(unsigned char map[MAXNETSIZE][4], size_t* remap
                 _rawsrc[nextoffset + increment]     = CLAMP(_rawsrc[nextoffset + increment]     - rerr / 16);
             }
             _rawsrc[nextoffset + 3] = CLAMP(_rawsrc[nextoffset + 3] - aerr * 5 / 16);
-            _rawsrc[nextoffset + 2] = CLAMP(_rawsrc[nextoffset + 2] - berr * 5 / 16 );
+            _rawsrc[nextoffset + 2] = CLAMP(_rawsrc[nextoffset + 2] - berr * 5 / 16);
             _rawsrc[nextoffset + 1] = CLAMP(_rawsrc[nextoffset + 1] - gerr * 5 / 16);
-            _rawsrc[nextoffset]     = CLAMP(_rawsrc[nextoffset]   - rerr * 5 / 16  );
+            _rawsrc[nextoffset]     = CLAMP(_rawsrc[nextoffset]     - rerr * 5 / 16);
         }
 
         rerr = rerr * 7 / 16;
@@ -230,10 +228,6 @@ void ColorQuantizer::destroy()
     {
         delete[] _rawdest;
     }
-    if (_rawsrc)
-    {
-        delete[] _rawsrc;
-    }
     if (_palette)
     {
         delete[] _palette;
@@ -242,8 +236,8 @@ void ColorQuantizer::destroy()
     {
         delete[] _trans;
     }
-    delete[] _dest;
     delete[] _src;
+    delete[] _rawsrc;
 };
 
 void quantize_color(Image*& image, PNGWriter*& writer)
