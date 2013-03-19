@@ -7,13 +7,22 @@
 #include "PNGReader.h"
 #include "JPEGReader.h"
 #include "ReduceColor.h"
+#include "ColorQuantizer.h"
 #include "PNGWriter.h"
 
 void help()
 {
     std::cout << "lightpng: PNG optimization tool for game graphics" << std::endl
               << "   Copyright (c) 2012 Yoshiki Shibukawa (DeNA Co.,Ltd, and ngmoco LLC)" << std::endl
+              << std::endl
+              << "It uses NeuQuant Neural-Net Quantization Algorithm Interface" << std::endl
+              << "   Copyright (c) 1994 Anthony Dekker" << std::endl
+              << std::endl
+    #ifdef TEXTURE
+              << "   Non open source version" << std::endl
+    #else
               << "   Open source version" << std::endl
+    #endif
               << std::endl
               << "Texture file processing tool to use for texture." << std::endl
               << "  * Generetes small file size 16 bit PNG file." << std::endl
@@ -33,6 +42,7 @@ void help()
               << "   -16m PATH     : 16 bit PNG with 1 bit alpha (RGBA 5551)" << std::endl
               << "                 : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
               << "   -32 PATH      : 24/32 bit PNG" << std::endl
+              << "   -i32 PATH     : Indexed 24/32 bit PNG" << std::endl
               << "   -p16a PATH    : 16 bit PNG with 4 bit alpha (RGBA 4444) preview file" << std::endl
               << "    or -p16 PATH : 16 bit PNG with 4 bit alpha (RGBA 4444) preview file" << std::endl
               << "   -p16m PATH    : 16 bit PNG with 1 bit alpha (RGBA 5551) preview file" << std::endl
@@ -173,11 +183,32 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
                 std::string path(argv[i]);
                 if (check_ext(path, ".png"))
                 {
-                    outputs.push_back(output_type(FullColorPNGFile, path));
+                    outputs.push_back(output_type(FullColorPNGFile, path));       
                 }
                 else
                 {
                     std::cout << "-32 file should be .png " << path << std::endl;
+                    mode = helpMode;
+                    break;
+                }
+            }
+            else if (opt == "-i32")
+            {
+                i++;
+                if (i == argc)
+                {
+                    std::cout << "-i32 needs file path" << std::endl;
+                    mode = helpMode;
+                    break;
+                }
+                std::string path(argv[i]);
+                if (check_ext(path, ".png"))
+                {
+                    outputs.push_back(output_type(IndexedColorPNGFile, path));
+                }
+                else
+                {
+                    std::cout << "-i32 file should be .png " << path << std::endl;
                     mode = helpMode;
                     break;
                 }
@@ -217,6 +248,8 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
         PNGWriter *preview_alpha_png_writer = 0;
         PNGWriter *preview_noalpha_png_writer = 0;
         PNGWriter *fullcolor_png_writer = 0;
+        PNGWriter *indexedcolor_png_writer = 0;
+        PNGWriter *reducedindexedcolor_png_writer = 0;
         for (output_list::iterator i = outputs.begin(); i != outputs.end(); ++i)
         {
             OutputFileType outputType = (*i).first;
@@ -364,6 +397,20 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 }
                 fullcolor_png_writer->write((*i).second.c_str());
                 break;
+            case IndexedColorPNGFile:
+                if (!indexedcolor_png_writer)
+                {
+                    indexedcolor_png_writer = new PNGWriter(reader, hasAlphaChannel, true, verbose);
+                    double t1 = get_time();
+                    quantize_color(reader, indexedcolor_png_writer);
+                    if (bench)
+                    {
+                        double t2 = get_time();
+                        std::cout << "32bit Indexed PNG compression: " << t2 - t1 << std::endl;
+                    }
+                }
+                indexedcolor_png_writer->write((*i).second.c_str());
+                break;
             }
         }
         delete reader;
@@ -382,6 +429,14 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
         if (fullcolor_png_writer)
         {
             delete fullcolor_png_writer;
+        }
+        if (indexedcolor_png_writer)
+        {
+            delete indexedcolor_png_writer;
+        }
+        if (reducedindexedcolor_png_writer)
+        {
+            delete reducedindexedcolor_png_writer;
         }
         if (preview_mask_png_writer)
         {

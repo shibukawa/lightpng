@@ -236,6 +236,14 @@ PNGWriter::~PNGWriter()
     {
         delete[] _file_content;
     }
+    if (_palette)
+    {
+        delete[] _palette;
+    }
+    if (_trans)
+    {
+        delete[] _trans;
+    }
 }
 
 void PNGWriter::process(unsigned char* raw_buffer)
@@ -246,6 +254,21 @@ void PNGWriter::process(unsigned char* raw_buffer)
     for (size_t i = 0; i < _height; ++i)
     {
         _image_rows[i] = raw_buffer + i * _width * pixelSize;
+    }
+    process(_image_rows);
+}
+
+void PNGWriter::process(unsigned char* raw_buffer, png_color* palette, unsigned char* trans, size_t transnum)
+{
+    _raw_buffer = raw_buffer;
+    _palette = palette;
+    _trans = trans;
+    _index = true;
+    _transnum = transnum;
+    _image_rows = new unsigned char*[_height];
+    for (size_t i = 0; i < _height; ++i)
+    {
+        _image_rows[i] = raw_buffer + i * _width;
     }
     process(_image_rows);
 }
@@ -335,7 +358,17 @@ void PNGWriter::compress(size_t parameter_index, Buffer* buffer)
     png_set_filter(png, PNG_FILTER_TYPE_BASE, param->get_filter());
     png_set_compression_level(png, Z_BEST_COMPRESSION);
     png_set_compression_mem_level(png, MAX_MEM_LEVEL);
-    if (_has_alpha)
+    if (_index)
+    {
+        png_set_IHDR(png, info, _width, _height, 8, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
+            PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+        png_set_PLTE(png, info, _palette, 256);
+        if (_transnum > 0)
+        {
+            png_set_tRNS(png, info, _trans, _transnum, NULL);
+        }
+    }
+    else if (_has_alpha)
     {
         png_set_IHDR(png, info, _width, _height, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
             PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);

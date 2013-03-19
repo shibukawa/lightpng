@@ -6,16 +6,6 @@ AddOption('--enable-debug',
           action='store_true',
           default=False,
           help='Debug Build')
-AddOption('--profile-generate',
-          dest='profile_generate',
-          action='store_true',
-          default=False,
-          help='Generate profile for optimaization')
-AddOption('--profile-use',
-          dest='profile_use',
-          action='store_true',
-          default=False,
-          help='Use generated profile')
 AddOption('--mingw32',
           dest='mingw32',
           action='store_true',
@@ -43,12 +33,12 @@ AddOption('--AdrenoSDK',
           metavar='DIR',
           default='$HOME/.wine/drive_c/AdrenoSDK',
           help='Enable ATITC Texture Compression convert/preview feature. Default is "~/.wine/drive_c/AdrenoSDK".')
-    
-sconscript = ['third_party/zlib', 'third_party/libpng', 'third_party/jpeg']
+
+sconscript = ['third_party/zlib', 'third_party/libpng', 'third_party/jpeg', 'third_party/pngnq']
 sources = ['src/PNGReader.cpp', 'src/JPEGReader.cpp', 'src/PNGWriter.cpp']
-libs = ['png', 'z', 'jpeg']
-libpath = ['third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/']
-cpppath = ['src', 'third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/']
+libs = ['png', 'z', 'jpeg', 'pngnq']
+libpath = ['third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/pngnq']
+cpppath = ['src', 'third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/pngnq/src/']
 ccflags = []
 linkflags = []
 
@@ -67,16 +57,6 @@ if GetOption('enabledebug'):
     ccflags.append('-Wall')
 else:
     ccflags.append('-O3')
-
-
-if GetOption('profile_generate'):
-    ccflags.append('-fprofile-generate')
-    linkflags.append('-fprofile-generate')
-
-
-if GetOption('profile_use'):
-    ccflags.append('-fprofile-use')
-    linkflags.append('-fprofile-use')
 
 
 if GetOption('mingw32'):

@@ -28,7 +28,7 @@ public:
     bool operator!() const { return !_valid; }
 
     void process(unsigned char** src, bool preview = true);
-    unsigned char* deligate_rawimage() {
+    unsigned char* delegate_rawimage() {
         unsigned char* result = _rawdest;
         _rawdest = 0;
         return result;
@@ -81,7 +81,7 @@ public:
 
     operator void*() const { return _valid ? const_cast<ColorReducer*>(this) : 0; }
     bool operator!() const { return !_valid; }
-    unsigned char* deligate_rawimage() {
+    unsigned char* delegate_rawimage() {
         unsigned char* result = _rawdest;
         _rawdest = 0;
         return result;
@@ -352,7 +352,7 @@ unsigned char* reduce_color(Image*& image, unsigned R, unsigned G, unsigned B, b
 {
     ColorReducer<A> reducer(image->width(), image->height(), R, G, B);
     reducer.process(image->raw_image(), preview);
-    return reducer.deligate_rawimage();
+    return reducer.delegate_rawimage();
 }
 
 
@@ -361,8 +361,7 @@ unsigned char* reduce_color<0>(Image*& image, unsigned R, unsigned G, unsigned B
 {
     ColorReducer<0> reducer(image->width(), image->height(), R, G, B);
     reducer.process(image->raw_image(), preview);
-    return reducer.deligate_rawimage();
-}
-
+    return reducer.delegate_rawimage();
+} 
 
 #endif

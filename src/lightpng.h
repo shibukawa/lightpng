@@ -22,6 +22,8 @@ enum OutputFileType
     MaskPNGFile,
     AlphaPNGFile,
     FullColorPNGFile,
+    IndexedColorPNGFile,
+    IndexedReducedColorPNGFile,
     PVRFile,
     LegacyPVRFile,
     ATCFile,

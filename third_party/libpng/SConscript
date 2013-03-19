@@ -2,17 +2,9 @@ Import('env')
 
 ccflags = ['-O3', '-m32']
 
-if GetOption('profile_generate'):
-    ccflags.append('-fprofile-generate')
-
-
-if GetOption('profile_use'):
-    ccflags.append('-fprofile-use')
-
-
 env.StaticLibrary(
     'libpng',
-    ['png.c', 'pngset.c', 'pngget.c', 'pngrutil.c', 'pngtrans.c', 
+    ['png.c', 'pngset.c', 'pngget.c', 'pngrutil.c', 'pngtrans.c',
      'pngwutil.c', 'pngmem.c', 'pngpread.c', 'pngread.c', 'pngerror.c',
      'pngwrite.c', 'pngrtran.c', 'pngwtran.c', 'pngrio.c', 'pngwio.c'],
     LIBS=['z'],
