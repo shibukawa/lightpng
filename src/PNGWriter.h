@@ -19,7 +19,7 @@ public:
     }
     ~PNGWriter();
     void process(unsigned char* raw_buffer);
-    void process(unsigned char* raw_buffer, png_color* palette, unsigned char* trans, size_t transnum);
+    void process(unsigned char* raw_buffer, png_color* palette, unsigned char* trans);
     void process(unsigned char** image_rows);
     void write(const char* filepath);
     void compress(size_t parameter_index, Buffer* buffer);
@@ -33,7 +33,8 @@ private:
     size_t _width;
     size_t _height;
     size_t _file_size;
-    size_t _transnum;
+    size_t _palette_size;
+    size_t _trans_size;
     bool _has_alpha;
     bool _index;
     bool _optimize;

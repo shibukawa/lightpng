@@ -1,4 +1,5 @@
 #include "PNGWriter.h"
+#include "PaletteOptimizer.h"
 #include <iostream>
 #include <vector>
 #include <stdio.h>
@@ -258,18 +259,26 @@ void PNGWriter::process(unsigned char* raw_buffer)
     process(_image_rows);
 }
 
-void PNGWriter::process(unsigned char* raw_buffer, png_color* palette, unsigned char* trans, size_t transnum)
+void PNGWriter::process(unsigned char* raw_buffer, png_color* palette, unsigned char* trans)
 {
-    _raw_buffer = raw_buffer;
-    _palette = palette;
-    _trans = trans;
+    PaletteOptimizer optimizer(_width, _height);
+    optimizer.process8bit(raw_buffer, palette, trans);
+    _raw_buffer = optimizer.delegate_rawimage();
+    _palette = optimizer.delegate_palette();
+    _trans = optimizer.delegate_trans();
     _index = true;
-    _transnum = transnum;
+    _palette_size = optimizer.palette_size();
+    _trans_size = optimizer.trans_size();
+    //std::cout << "palette size: " << _palette_size << std::endl;
+    //std::cout << "trans size: " << _trans_size << std::endl;
     _image_rows = new unsigned char*[_height];
     for (size_t i = 0; i < _height; ++i)
     {
-        _image_rows[i] = raw_buffer + i * _width;
+        _image_rows[i] = _raw_buffer + i * _width;
     }
+    delete[] raw_buffer;
+    delete[] palette;
+    delete[] trans;
     process(_image_rows);
 }
 
@@ -362,10 +371,10 @@ void PNGWriter::compress(size_t parameter_index, Buffer* buffer)
     {
         png_set_IHDR(png, info, _width, _height, 8, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
             PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
-        png_set_PLTE(png, info, _palette, 256);
-        if (_transnum > 0)
+        png_set_PLTE(png, info, _palette, _palette_size);
+        if (_trans_size > 0)
         {
-            png_set_tRNS(png, info, _trans, _transnum, NULL);
+            png_set_tRNS(png, info, _trans, _trans_size, NULL);
         }
     }
     else if (_has_alpha)

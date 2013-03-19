@@ -38,7 +38,9 @@ sconscript = ['third_party/zlib', 'third_party/libpng', 'third_party/jpeg', 'thi
 sources = ['src/PNGReader.cpp', 'src/JPEGReader.cpp', 'src/PNGWriter.cpp']
 libs = ['png', 'z', 'jpeg', 'pngnq']
 libpath = ['third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/pngnq']
-cpppath = ['src', 'third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/pngnq/src/']
+cpppath = [
+    'boost_1_53_0/',
+    'src', 'third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/pngnq/src/']
 ccflags = []
 linkflags = []
 
