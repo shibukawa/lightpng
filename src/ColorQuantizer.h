@@ -59,6 +59,7 @@ private:
 
     void destroy();
     void remap_floyd(unsigned char map[MAXNETSIZE][4], size_t* remap);
+    void remap_simple(unsigned char map[MAXNETSIZE][4], size_t* remap);
 };
 
 ColorQuantizer::ColorQuantizer(size_t width, size_t height)
@@ -213,6 +214,21 @@ void ColorQuantizer::remap_floyd(unsigned char map[MAXNETSIZE][4], size_t* remap
         gerr = gerr * 7 / 16;
         berr = berr * 7 / 16;
         aerr = aerr * 7 / 16;
+    }
+}
+
+void ColorQuantizer::remap_simple(unsigned char map[MAXNETSIZE][4], size_t* remap)
+{
+    for (size_t y = 0; y < _height; ++y)
+    {
+        size_t offset = y * _width * 4;
+        for(size_t x = 0; x < _width; x++)
+        {
+            _rawdest[y * _width + x] = remap[inxsearch(_rawsrc[x * 4 + offset + 3],
+                                                       _rawsrc[x * 4 + offset + 2],
+                                                       _rawsrc[x * 4 + offset + 1],
+                                                       _rawsrc[x * 4 + offset])];
+        }
     }
 }
 

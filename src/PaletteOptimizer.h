@@ -92,12 +92,10 @@ void PaletteOptimizer::process8bit(unsigned char* src , png_color* palette, unsi
         if (existing != optimized_palette.end())
         {
             palette_convert[i] = palette_convert[existing->second];
-            //std::cout << i << " (dupe)-> " << (int)palette_convert[existing->second] << std::endl;
         }
         else
         {
             palette_convert[i] = optimized_palette.size();
-            //std::cout << i << " -> " << optimized_palette.size() << std::endl;
             optimized_palette[color] = c;
             if (trans[i] != 255)
             {
@@ -114,10 +112,9 @@ void PaletteOptimizer::process8bit(unsigned char* src , png_color* palette, unsi
     {
         size_t offset = palette_convert[iter->second];
         _palette[offset] = palette[iter->second];
-        //std::cout << offset << " < " << (int)iter->second << ": " << (int)palette[iter->second].red << ", " << (int)palette[iter->second].green << ", " << (int)palette[iter->second].blue << std::endl;
         if (offset < _trans_size)
         {
-            _trans[offset] = _trans[iter->second];
+            _trans[offset] = trans[iter->second];
         }
     }
     for (size_t i = 0; i < _size; i++)
