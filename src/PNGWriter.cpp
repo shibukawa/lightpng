@@ -1,11 +1,13 @@
-#include "PNGWriter.h"
-#include "PaletteOptimizer.h"
 #include <iostream>
 #include <vector>
 #include <stdio.h>
 #include <pthread.h>
 #include <zlib.h>
 #include <png.h>
+#include "LPType.h"
+#include "PNGWriter.h"
+#include "PaletteOptimizer.h"
+
 
 struct parameter
 {
@@ -228,52 +230,56 @@ void buffer_write(png_structp png_ptr, png_bytep data, png_size_t length)
 
 PNGWriter::~PNGWriter()
 {
-    if (_raw_buffer)
-    {
-        delete[] _raw_buffer;
-        delete[] _image_rows;
-    }
-    if (_file_content)
-    {
-        delete[] _file_content;
-    }
-    if (_palette)
-    {
-        delete[] _palette;
-    }
-    if (_trans)
-    {
-        delete[] _trans;
-    }
 }
 
-void PNGWriter::process(unsigned char* raw_buffer)
+void PNGWriter::process(buffer_t raw_buffer)
 {
     _raw_buffer = raw_buffer;
-    _image_rows = new unsigned char*[_height];
+    _image_rows.reset(new unsigned char*[_height]);
     size_t pixelSize = (_has_alpha) ? 4 : 3;
     for (size_t i = 0; i < _height; ++i)
     {
-        _image_rows[i] = raw_buffer + i * _width * pixelSize;
+        _image_rows[i] = raw_buffer.get() + i * _width * pixelSize;
     }
-    process(_image_rows);
+    _process();
 }
 
-void PNGWriter::process(unsigned char* raw_buffer, png_color* palette, unsigned char* trans)
+void PNGWriter::process(buffer_t raw_buffer, bool shrink)
+{
+    if (shrink)
+    {
+        buffer_t buffer(new unsigned char[_width * _height * 3]);
+        for (size_t y = 0; y < _height; y++)
+        {
+            for (size_t x = 0; x < _width; x++)
+            {
+                size_t offset1 = (y * _width + x) * 3;
+                size_t offset2 = (y * _width + x) * 4;
+                buffer[offset1]     = raw_buffer[offset2];
+       	        buffer[offset1 + 1] = raw_buffer[offset2 + 1];
+                buffer[offset1 + 2] = raw_buffer[offset2 + 2];
+            }
+        }
+        process(buffer);
+    }
+    else
+    {
+        process(raw_buffer);
+    }
+}
+
+void PNGWriter::process(buffer_t raw_buffer, palette_t palette, trans_t trans, bool optimize)
 {
     _index = true;
-    if (true) // optimize
+    if (optimize)
     {
         PaletteOptimizer optimizer(_width, _height);
         optimizer.process8bit(raw_buffer, palette, trans);
-        _raw_buffer = optimizer.delegate_rawimage();
-        _palette = optimizer.delegate_palette();
-        _trans = optimizer.delegate_trans();
+        _raw_buffer = optimizer.buffer();
+        _palette = optimizer.palette();
+        _trans = optimizer.trans();
         _palette_size = optimizer.palette_size();
         _trans_size = optimizer.trans_size();
-        delete[] raw_buffer;
-        delete[] palette;
-        delete[] trans;
     }
     else
     {
@@ -283,20 +289,18 @@ void PNGWriter::process(unsigned char* raw_buffer, png_color* palette, unsigned 
         _palette_size = 255;
         _trans_size = 255;
     }
-    //std::cout << "palette size: " << _palette_size << std::endl;
-    //std::cout << "trans size: " << _trans_size << std::endl;
-    _image_rows = new unsigned char*[_height];
+    std::cout << "palette size: " << _palette_size << std::endl;
+    std::cout << "trans size: " << _trans_size << std::endl;
+    _image_rows.reset(new unsigned char*[_height]);
     for (size_t i = 0; i < _height; ++i)
     {
-        _image_rows[i] = _raw_buffer + i * _width;
+        _image_rows[i] = _raw_buffer.get() + i * _width;
     }
-    process(_image_rows);
+    _process();
 }
 
-void PNGWriter::process(unsigned char** image_rows)
+void PNGWriter::_process()
 {
-    _image_rows = image_rows;
-
     if (_optimize)
     {
         int rc;
@@ -330,7 +334,9 @@ void PNGWriter::process(unsigned char** image_rows)
                 std::cout << "best result: ";
                 parameters[best_index].print(task.best_size());
             }
-            task.flush(_file_content, _file_size);
+            unsigned char* content = _file_content.get();
+            task.flush(content, _file_size);
+            _file_content.reset(content);
             _valid = true;
         }
     }
@@ -338,7 +344,9 @@ void PNGWriter::process(unsigned char** image_rows)
     {
         Buffer* buffer = new Buffer();
         compress(0, buffer);
-        buffer->flush(_file_content, _file_size);
+        unsigned char* content = _file_content.get();
+        buffer->flush(content, _file_size);
+        _file_content.reset(content);
         delete buffer;
         _valid = true;
     }
@@ -349,7 +357,7 @@ void PNGWriter::write(const char* filepath)
     if (_valid)
     {
         FILE * fp = fopen(filepath, "wb");
-        fwrite(_file_content , 1 , _file_size , fp);
+        fwrite(_file_content.get(), 1 , _file_size , fp);
         fclose(fp);
     }
 }
@@ -378,14 +386,31 @@ void PNGWriter::compress(size_t parameter_index, Buffer* buffer)
     png_set_filter(png, PNG_FILTER_TYPE_BASE, param->get_filter());
     png_set_compression_level(png, Z_BEST_COMPRESSION);
     png_set_compression_mem_level(png, MAX_MEM_LEVEL);
+    bool packing = false;
     if (_index)
     {
-        png_set_IHDR(png, info, _width, _height, 8, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
+        size_t bitlength = 8;
+        if (_palette_size <= 2)
+        {
+            bitlength = 1;
+            packing = true;
+        }
+        else if (_palette_size <= 4)
+        {
+            bitlength = 2;
+            packing = true;
+        }
+        else if (_palette_size <= 16)
+        {
+            bitlength = 4;
+            packing = true;
+        }
+        png_set_IHDR(png, info, _width, _height, bitlength, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
             PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
-        png_set_PLTE(png, info, _palette, _palette_size);
+        png_set_PLTE(png, info, _palette.get(), _palette_size);
         if (_trans_size > 0)
         {
-            png_set_tRNS(png, info, _trans, _trans_size, NULL);
+            png_set_tRNS(png, info, _trans.get(), _trans_size, NULL);
         }
     }
     else if (_has_alpha)
@@ -399,7 +424,10 @@ void PNGWriter::compress(size_t parameter_index, Buffer* buffer)
             PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
     }
     png_write_info(png, info);
-    png_write_image(png, _image_rows);
-    png_write_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
+    if (packing)
+    {
+        png_set_packing(png);
+    }
+    png_write_image(png, _image_rows.get());
     png_write_end(png, info);
 };

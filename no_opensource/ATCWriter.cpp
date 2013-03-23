@@ -35,7 +35,7 @@ ATCWriter::~ATCWriter()
     destroy();
 }
 
-void ATCWriter::process(unsigned char* srcRawData, bool hasAlpha)
+void ATCWriter::process(buffer_t srcRawData, bool hasAlpha)
 {
     BitChanger expander(_width, _height, hasAlpha, srcRawData);
     _size = expander.height();
@@ -51,7 +51,7 @@ void ATCWriter::process(unsigned char* srcRawData, bool hasAlpha)
     srcImage->nWidth = _size;
     srcImage->nHeight = _size;
     srcImage->nDataSize = _size * _size * 4;
-    srcImage->pData = expander.raw_buffer();
+    srcImage->pData = expander.buffer().get();
 
     if (hasAlpha)
     {

@@ -2,12 +2,13 @@
 #define BIT_CHANGER_H
 
 #include <math.h>
+#include "LPType.h"
 #include "Image.h"
 
 class BitChanger : public Image
 {
 public:
-    explicit BitChanger(size_t width, size_t height, bool useAlpha, unsigned char* src)
+    explicit BitChanger(size_t width, size_t height, bool useAlpha, buffer_t src)
         : Image()
     {
         size_t size = pow(2, ceil(log2(fmax(width, height))));

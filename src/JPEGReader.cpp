@@ -32,7 +32,7 @@ JPEGReader::JPEGReader(const char* filepath) : Image()
     while(_jpeginfo.output_scanline < _jpeginfo.output_height)
     {
         jpeg_read_scanlines(&_jpeginfo,
-            raw_image() + _jpeginfo.output_scanline,
+            image().get() + _jpeginfo.output_scanline,
             _jpeginfo.output_height - _jpeginfo.output_scanline
         );
     }

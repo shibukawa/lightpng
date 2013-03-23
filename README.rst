@@ -42,16 +42,21 @@ from this PNG file directly.
 How To Build
 ------------
 
-It needs following libraries, but these source code are bundled:
+It needs following library. You should download and decompress at the root folder:
+
+* `boost_1_53_0 <http://www.boost.org/>`_
+
+It uses following libraries, but these source code are bundled:
 
 * libpng
 * libz
 * jpeglib
+* pngquant
 
 This repository contains a build setting file of SCons. I tested on Mac OS X with MaccPorts environment,
 but maybe work on any scons/gcc environment::
 
-   $ sudo port install scons 
+   $ sudo port install scons
    $ scons
    $ ./lightpng input.png -16m output.png
 

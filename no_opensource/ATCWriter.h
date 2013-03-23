@@ -1,6 +1,7 @@
 #ifndef ATCWRITER_H
 #define ATCWRITER_H
 
+#include "LPType.h"
 #include <TextureConverter.h>
 
 class ATCWriter
@@ -10,7 +11,7 @@ public:
         : _texture(0), _width(width), _height(height), _size(0) {}
     virtual ~ATCWriter();
 
-    void process(unsigned char* src, bool hasAlpha);
+    void process(buffer_t src, bool hasAlpha);
     void write(const char* filepath);
     void writeWithHeader(const char* filepath);
     void writeToPNG(const char* filepath);

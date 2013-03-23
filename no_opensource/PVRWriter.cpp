@@ -13,7 +13,7 @@ PVRWriter::~PVRWriter()
     destroy();
 }
 
-void PVRWriter::process(unsigned char* src, bool hasAlpha)
+void PVRWriter::process(buffer_t src, bool hasAlpha)
 {
     bool result;
     BitChanger expander(_width, _height, hasAlpha, src);
@@ -22,13 +22,13 @@ void PVRWriter::process(unsigned char* src, bool hasAlpha)
     if (hasAlpha)
     {
         PixelType PVRTC4BPP_RGBA(ePVRTPF_PVRTCI_4bpp_RGBA);
-        _pvr = new CPVRTexture(header, expander.raw_buffer());
+        _pvr = new CPVRTexture(header, expander.buffer().get());
         result = Transcode(*_pvr, PVRTC4BPP_RGBA, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
     }
     else
     {
         PixelType PVRTC4BPP_RGB(ePVRTPF_PVRTCI_4bpp_RGB);
-        _pvr = new CPVRTexture(header, expander.raw_buffer());
+        _pvr = new CPVRTexture(header, expander.buffer().get());
         result = Transcode(*_pvr, PVRTC4BPP_RGB, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
     }
 };
@@ -78,7 +78,6 @@ void PVRWriter::writeToPNG(const char* filepath)
     png_set_IHDR(png, info, _width, _height, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
     png_write_info(png, info);
     png_write_image(png, raw_list);
-    png_write_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
     png_write_end(png, info);
     delete[] raw_list;
 };

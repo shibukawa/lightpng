@@ -1,6 +1,8 @@
 #ifndef PVRWRITER_H
 #define PVRWRITER_H
 
+#include "LPType.h"
+
 namespace pvrtexture
 {
     class CPVRTexture;
@@ -14,7 +16,7 @@ public:
         : _pvr(0), _header(0), _width(width), _height(height), _size(0) {}
     virtual ~PVRWriter();
 
-    void process(unsigned char* src, bool hasAlpha);
+    void process(buffer_t src, bool hasAlpha);
     void write(const char* filepath);
     void writeToLegacy(const char* filepath);
     void writeToPNG(const char* filepath);

@@ -35,12 +35,12 @@ AddOption('--AdrenoSDK',
           help='Enable ATITC Texture Compression convert/preview feature. Default is "~/.wine/drive_c/AdrenoSDK".')
 
 sconscript = ['third_party/zlib', 'third_party/libpng', 'third_party/jpeg', 'third_party/pngnq']
-sources = ['src/PNGReader.cpp', 'src/JPEGReader.cpp', 'src/PNGWriter.cpp']
+sources = ['src/PNGReader.cpp', 'src/JPEGReader.cpp', 'src/PNGWriter.cpp', 'src/MedianCutQuantizer.cpp', 'src/NeuralNetQuantizer.cpp', 'src/PaletteOptimizer.cpp']
 libs = ['png', 'z', 'jpeg', 'pngnq']
 libpath = ['third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/pngnq']
 cpppath = [
     'boost_1_53_0/',
-    'src', 'third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/pngnq/src/']
+    'src/', 'third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/pngnq/src/']
 ccflags = []
 linkflags = []
 

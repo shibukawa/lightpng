@@ -1,89 +1,8 @@
-#ifndef COLOR_QUANTIZER_H
-#define COLOR_QUANTIZER_H
-
 #include <iostream>
-#include <cstring>
-#include "Image.h"
-#include "PNGWriter.h"
-extern "C" {
-    #include "neuquant32.h"
-}
+#include "NeuralNetQuantizer.h"
 
-static inline unsigned char CLAMP(int value)
+void NeuralNetQuantizer::_process()
 {
-    return (value >= 0 ? (value <= 255 ? value : 255) : 0);
-}
-
-class ColorQuantizer
-{
-public:
-    explicit ColorQuantizer(size_t width, size_t height);
-    virtual ~ColorQuantizer();
-
-    operator void*() const { return _valid ? const_cast<ColorQuantizer*>(this) : 0; }
-    bool operator!() const { return !_valid; }
-
-    void process(unsigned char** src);
-    unsigned char* delegate_rawimage()
-    {
-        unsigned char* result = _rawdest;
-        _rawdest = 0;
-        return result;
-    };
-    png_color* delegate_palette()
-    {
-        png_color* result = _palette;
-        _palette = 0;
-        return result;
-    };
-    unsigned char* delegate_trans()
-    {
-        unsigned char* result = _trans;
-        _trans = 0;
-        return result;
-    }
-    size_t trans_size()
-    {
-        return _transnum;
-    }
-
-private:
-    unsigned char** _src;
-    unsigned char* _rawsrc;
-    unsigned char* _rawdest;
-    size_t _width, _height;
-    size_t _transnum;
-    bool _valid;
-    png_color* _palette;
-    unsigned char* _trans;
-
-    void destroy();
-    void remap_floyd(unsigned char map[MAXNETSIZE][4], size_t* remap);
-    void remap_simple(unsigned char map[MAXNETSIZE][4], size_t* remap);
-};
-
-ColorQuantizer::ColorQuantizer(size_t width, size_t height)
-    : _src(0), _rawsrc(0), _rawdest(0),
-      _width(width), _height(height), _transnum(0), _valid(false), _palette(0), _trans(0)
-{
-    _rawsrc = new unsigned char[4 * width * height];
-    _rawdest = new unsigned char[width * height];
-    _src = new unsigned char*[height];
-    for (size_t i = 0; i < _height; ++i)
-    {
-        _src[i] = _rawsrc + (i * width * 4);
-    }
-    _valid = true;
-    _palette = new png_color[256];
-    _trans = new unsigned char[256];
-};
-
-void ColorQuantizer::process(unsigned char** src)
-{
-    for (size_t i = 0; i < _height; ++i)
-    {
-        memcpy(_src[i], src[i], _width * 4);
-    }
     size_t bot_idx, top_idx;  // for remapping of indices
     size_t x;
     size_t remap[MAXNETSIZE];
@@ -93,11 +12,12 @@ void ColorQuantizer::process(unsigned char** src)
     int newcolors = 256;
 
     // Start neuquant
-    initnet(_rawsrc, _height * _width * 4, newcolors, 1.0);
+    initnet(_rawsrc.get(), _height * _width * 4, newcolors, 1.0);
     int verbose = 0;
     learn(1, verbose);
     inxbuild();
     getcolormap((unsigned char*)map);
+    size_t transnum = 0;
 
     // Remap indexes so all tRNS chunks are together
     //PNGNQ_MESSAGE("  Remapping colormap to eliminate opaque tRNS - chunk entries...\n");
@@ -109,7 +29,7 @@ void ColorQuantizer::process(unsigned char** src)
         }
         else
         {
-            remap[x] = _transnum++;
+            remap[x] = transnum++;
         }
     }
 
@@ -130,7 +50,7 @@ void ColorQuantizer::process(unsigned char** src)
     remap_floyd(map, remap);
 }
 
-void ColorQuantizer::remap_floyd(unsigned char map[MAXNETSIZE][4], size_t* remap)
+void NeuralNetQuantizer::remap_floyd(unsigned char map[MAXNETSIZE][4], size_t* remap)
 {
     for (size_t y = 0; y < _height; ++y)
     {
@@ -217,7 +137,7 @@ void ColorQuantizer::remap_floyd(unsigned char map[MAXNETSIZE][4], size_t* remap
     }
 }
 
-void ColorQuantizer::remap_simple(unsigned char map[MAXNETSIZE][4], size_t* remap)
+void NeuralNetQuantizer::remap_simple(unsigned char map[MAXNETSIZE][4], size_t* remap)
 {
     for (size_t y = 0; y < _height; ++y)
     {
@@ -233,35 +153,9 @@ void ColorQuantizer::remap_simple(unsigned char map[MAXNETSIZE][4], size_t* rema
 }
 
 
-ColorQuantizer::~ColorQuantizer()
+void neural_net_quantize(Image& image, PNGWriter& writer, bool hasAlphaChannel)
 {
-    destroy();
+    NeuralNetQuantizer quantizer(image.width(), image.height());
+    quantizer.process(image.image(), hasAlphaChannel);
+    writer.process(quantizer.buffer(), quantizer.palette(), quantizer.trans(), true);
 }
-
-void ColorQuantizer::destroy()
-{
-    if (_rawdest)
-    {
-        delete[] _rawdest;
-    }
-    if (_palette)
-    {
-        delete[] _palette;
-    }
-    if (_trans)
-    {
-        delete[] _trans;
-    }
-    delete[] _src;
-    delete[] _rawsrc;
-};
-
-void quantize_color(Image*& image, PNGWriter*& writer)
-{
-    ColorQuantizer quantizer(image->width(), image->height());
-    quantizer.process(image->raw_image());
-    writer->process(quantizer.delegate_rawimage(), quantizer.delegate_palette(), quantizer.delegate_trans());
-}
-
-
-#endif

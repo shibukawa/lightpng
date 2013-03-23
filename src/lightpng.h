@@ -30,6 +30,7 @@ enum OutputFileType
     ATCPlusHeaderFile,
     PreviewMaskPNGFile,
     PreviewAlphaPNGFile,
+    PreviewIndexedReducedColorPNGFile,
     PreviewPVRFile,
     PreviewATCFile
 };

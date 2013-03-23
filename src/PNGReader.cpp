@@ -80,10 +80,29 @@ PNGReader::PNGReader(const char* filepath) : Image(), _png(0), _info(0), _channe
 
     alloc(_channels);
 
-    png_read_image(_png, raw_image());
+    png_read_image(_png, image().get());
     png_read_end(_png, NULL);
 
     _valid = true;
+}
+
+bool PNGReader::hasAlpha() const {
+    if (_channels == 3)
+    {
+        return false;
+    }
+    for (size_t y = 0; y < _height; y++)
+    {
+        unsigned char* row = _rows[y];
+        for (size_t x = 0; x < _width; x++)
+        {
+            if (row[x * 4 + 3] != 255)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 PNGReader::~PNGReader()
