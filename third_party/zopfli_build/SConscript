@@ -1,0 +1,22 @@
+Import('env')
+
+ccflags = ['-O3', '-m32']
+
+env.StaticLibrary(
+    'zopfli',
+    ['../zopfli/blocksplitter.c',
+     '../zopfli/cache.c',
+     '../zopfli/deflate.c',
+     '../zopfli/gzip_container.c',
+     '../zopfli/hash.c',
+     '../zopfli/katajainen.c',
+     '../zopfli/lz77.c',
+     '../zopfli/squeeze.c',
+     '../zopfli/tree.c',
+     '../zopfli/util.c',
+     '../zopfli/zlib_container.c'],
+    LIBS=['z'],
+    LIBPATH=[],
+    CPPPATH=['../zopfli/'],
+    CCFLAGS = ccflags
+)
