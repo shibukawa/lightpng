@@ -1,8 +1,8 @@
 
 /* pngwrite.c - general routines to write a PNG file
  *
- * Last changed in libpng 1.5.10 [March 8, 2012]
- * Copyright (c) 1998-2012 Glenn Randers-Pehrson
+ * Last changed in libpng 1.5.14 [January 24, 2013]
+ * Copyright (c) 1998-2013 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -420,7 +420,6 @@ png_write_end(png_structp png_ptr, png_infop info_ptr)
 }
 
 #ifdef PNG_CONVERT_tIME_SUPPORTED
-/* "tm" structure is not supported on WindowsCE */
 void PNGAPI
 png_convert_from_struct_tm(png_timep ptime, PNG_CONST struct tm FAR * ttime)
 {
@@ -806,7 +805,8 @@ png_write_row(png_structp png_ptr, png_const_bytep row)
 /* Added at libpng-1.5.10 */
 #ifdef PNG_WRITE_CHECK_FOR_INVALID_INDEX_SUPPORTED
    /* Check for out-of-range palette index */
-   if(row_info.color_type == PNG_COLOR_TYPE_PALETTE)
+   if (row_info.color_type == PNG_COLOR_TYPE_PALETTE &&
+       png_ptr->num_palette_max >= 0)
       png_do_check_palette_indexes(png_ptr, &row_info);
 #endif
 
@@ -1041,6 +1041,7 @@ png_set_filter(png_structp png_ptr, int method, int filters)
          case 5:
          case 6:
          case 7: png_warning(png_ptr, "Unknown row filter for method 0");
+             /* FALL THROUGH */
 #endif /* PNG_WRITE_FILTER_SUPPORTED */
          case PNG_FILTER_VALUE_NONE:
             png_ptr->do_filter = PNG_FILTER_NONE; break;
