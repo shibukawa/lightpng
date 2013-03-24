@@ -1715,6 +1715,14 @@ PNG_EXPORT(73, void, png_set_compression_method, (png_structp png_ptr,
     int method));
 #endif
 
+#ifdef PNG_WRITE_ZOPFLI_SUPPORTED
+PNG_EXPORT(235, void, png_set_compressor_type, (png_structp png_ptr,
+    int type));
+#endif
+
+#define PNG_WRITER_USE_ZLIB    0
+#define PNG_WRITER_USE_ZOPFLI   1
+
 #ifdef PNG_WRITE_CUSTOMIZE_ZTXT_COMPRESSION_SUPPORTED
 /* Also set zlib parameters for compressing non-IDAT chunks */
 PNG_EXPORT(222, void, png_set_text_compression_level,
@@ -2665,7 +2673,7 @@ PNG_EXPORT(234, void, png_set_check_for_invalid_index, (png_structp png_ptr,
  * scripts/symbols.def as well.
  */
 #ifdef PNG_EXPORT_LAST_ORDINAL
-  PNG_EXPORT_LAST_ORDINAL(234);
+  PNG_EXPORT_LAST_ORDINAL(235);
 #endif
 
 #ifdef __cplusplus

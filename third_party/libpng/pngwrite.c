@@ -845,39 +845,60 @@ png_write_flush(png_structp png_ptr)
    if (png_ptr->row_number >= png_ptr->num_rows)
       return;
 
-   do
+#ifdef PNG_WRITE_ZOPFLI_SUPPORTED
+   if (png_ptr->compressor_type == PNG_WRITER_USE_ZLIB)
    {
-      int ret;
+#endif
+     do
+     {
+        int ret;
 
-      /* Compress the data */
-      ret = deflate(&png_ptr->zstream, Z_SYNC_FLUSH);
-      wrote_IDAT = 0;
+        /* Compress the data */
+        ret = deflate(&png_ptr->zstream, Z_SYNC_FLUSH);
+        wrote_IDAT = 0;
 
-      /* Check for compression errors */
-      if (ret != Z_OK)
-      {
-         if (png_ptr->zstream.msg != NULL)
-            png_error(png_ptr, png_ptr->zstream.msg);
+        /* Check for compression errors */
+        if (ret != Z_OK)
+        {
+           if (png_ptr->zstream.msg != NULL)
+              png_error(png_ptr, png_ptr->zstream.msg);
 
-         else
-            png_error(png_ptr, "zlib error");
-      }
+           else
+              png_error(png_ptr, "zlib error");
+        }
 
-      if (!(png_ptr->zstream.avail_out))
-      {
-         /* Write the IDAT and reset the zlib output buffer */
-         png_write_IDAT(png_ptr, png_ptr->zbuf, png_ptr->zbuf_size);
-         wrote_IDAT = 1;
-      }
-   } while (wrote_IDAT == 1);
+        if (!(png_ptr->zstream.avail_out))
+        {
+           /* Write the IDAT and reset the zlib output buffer */
+           png_write_IDAT(png_ptr, png_ptr->zbuf, png_ptr->zbuf_size);
+           wrote_IDAT = 1;
+        }
+     } while (wrote_IDAT == 1);
 
-   /* If there is any data left to be output, write it into a new IDAT */
-   if (png_ptr->zbuf_size != png_ptr->zstream.avail_out)
-   {
-      /* Write the IDAT and reset the zlib output buffer */
-      png_write_IDAT(png_ptr, png_ptr->zbuf,
-          png_ptr->zbuf_size - png_ptr->zstream.avail_out);
+     /* If there is any data left to be output, write it into a new IDAT */
+     if (png_ptr->zbuf_size != png_ptr->zstream.avail_out)
+     {
+        /* Write the IDAT and reset the zlib output buffer */
+        png_write_IDAT(png_ptr, png_ptr->zbuf,
+            png_ptr->zbuf_size - png_ptr->zstream.avail_out);
+     }
+#ifdef PNG_WRITE_ZOPFLI_SUPPORTED
    }
+   else if (png_ptr->compression_type == PNG_WRITER_USE_ZOPFLI)
+   {
+       if (png_ptr->zopfli_buf != 0)
+       {
+           unsigned char *out = 0;
+           size_t outsize = 0;
+           ZlibCompress(&png_ptr->zopfli_options, png_ptr->zopfli_buf, png_ptr->zopfli_len, &out, &outsize);
+           png_write_IDAT(png_ptr, out, outsize);
+           free(out);
+           png_free(png_ptr, png_ptr->zopfli_buf);
+           png_ptr->zopfli_buf = 0;
+           png_ptr->zopfli_len = 0;
+       }
+   }
+#endif
    png_ptr->flush_rows = 0;
    png_flush(png_ptr);
 }
@@ -967,7 +988,7 @@ png_write_destroy(png_structp png_ptr)
    png_debug(1, "in png_write_destroy");
 
    /* Free any memory zlib uses */
-   if (png_ptr->zlib_state != PNG_ZLIB_UNINITIALIZED)
+   if (png_ptr->zlib_state != PNG_ZLIB_UNINITIALIZED && png_ptr->compressor_type == PNG_WRITER_USE_ZLIB)
       deflateEnd(&png_ptr->zstream);
 
    /* Free our memory.  png_free checks NULL for us. */
@@ -1391,6 +1412,22 @@ png_set_filter_heuristics_fixed(png_structp png_ptr, int heuristic_method,
 }
 #endif /* FIXED_POINT */
 #endif /* PNG_WRITE_WEIGHTED_FILTER_SUPPORTED */
+
+#ifdef PNG_WRITE_ZOPFLI_SUPPORTED
+void PNGAPI
+png_set_compressor_type(png_structp png_ptr, int type)
+{
+   png_debug(1, "in png_set_compressor_type");
+
+   if (png_ptr == NULL)
+      return;
+
+   if (type != 0 && type != 1)
+      png_warning(png_ptr, "Only compressor type 0 and 1 are supported by PNG");
+
+   png_ptr->compressor_type = type;
+}
+#endif
 
 void PNGAPI
 png_set_compression_level(png_structp png_ptr, int level)

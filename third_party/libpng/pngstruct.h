@@ -26,6 +26,10 @@
  */
 #include "zlib.h"
 
+#ifdef PNG_WRITE_ZOPFLI_SUPPORTED
+    #include "zlib_container.h"
+#endif
+
 struct png_struct_def
 {
 #ifdef PNG_SETJMP_SUPPORTED
@@ -68,9 +72,12 @@ struct png_struct_def
    uInt zbuf_size;            /* size of zbuf (typically 65536) */
 #ifdef PNG_WRITE_SUPPORTED
 
+   png_uint_32 compressor_type; /* zlib or zopfli */
+
 /* Added in 1.5.4: state to keep track of whether the zstream has been
  * initialized and if so whether it is for IDAT or some other chunk.
  */
+
 #define PNG_ZLIB_UNINITIALIZED 0
 #define PNG_ZLIB_FOR_IDAT      1
 #define PNG_ZLIB_FOR_TEXT      2 /* anything other than IDAT */
@@ -85,6 +92,13 @@ struct png_struct_def
    int zlib_window_bits;      /* holds zlib compression window bits */
    int zlib_mem_level;        /* holds zlib compression memory level */
    int zlib_strategy;         /* holds zlib compression strategy */
+
+#ifdef PNG_WRITE_ZOPFLI_SUPPORTED
+   struct Options zopfli_options; /* Zopfli options */
+   unsigned char *zopfli_buf;     /* Zopfli source buffer */
+   size_t zopfli_len;             /* Zopfli source buffer length */
+#endif
+
 #endif
 /* Added at libpng 1.5.4 */
 #if defined(PNG_WRITE_COMPRESSED_TEXT_SUPPORTED) || \

@@ -11,6 +11,7 @@
 
 struct parameter
 {
+    int type;
     int strategy;
     int window_bits;
     int filter;
@@ -31,9 +32,17 @@ struct parameter
             "PNG_FILTER_PAETH",
             "PNG_ALL_FILTERS"
         };
-        std::cout << size << " bytes (strategy: " << strategy_str[strategy] << " filter: "
-                  << filter_str[filter] << std::endl;
+        if (type == 0)
+        {
+            std::cout << size << " bytes (compressor: zLib, strategy: " << strategy_str[strategy] << ", filter: "
+                      << filter_str[filter] << ")" << std::endl;
+        }
+        else
+        {
+            std::cout << size << " bytes (compressor: zopfli, filter: " << filter_str[filter] << ")" << std::endl;
+                  }
     }
+    int get_type() const { return type; }
     int get_strategy() const { return strategy; }
     int get_window_bits() const { return window_bits; }
     int get_filter() const
@@ -50,31 +59,39 @@ struct parameter
     }
 };
 
-parameter parameters[24] = {
-    { 0, 15, 0 },
-    { 0, 15, 1 },
-    { 0, 15, 2 },
-    { 0, 15, 3 },
-    { 0, 15, 4 },
-    { 0, 15, 5 },
-    { 1, 15, 0 },
-    { 1, 15, 1 },
-    { 1, 15, 2 },
-    { 1, 15, 3 },
-    { 1, 15, 4 },
-    { 1, 15, 5 },
-    { 2,  9, 0 },
-    { 2,  9, 1 },
-    { 2,  9, 2 },
-    { 2,  9, 3 },
-    { 2,  9, 4 },
-    { 2,  9, 5 },
-    { 3,  9, 0 },
-    { 3,  9, 1 },
-    { 3,  9, 2 },
-    { 3,  9, 3 },
-    { 3,  9, 4 },
-    { 3,  9, 5 }
+const int total_parameter = 30;
+
+parameter parameters[total_parameter] = {
+    { 1, 0, 15, 0 },
+    { 1, 0, 15, 1 },
+    { 1, 0, 15, 2 },
+    { 1, 0, 15, 3 },
+    { 1, 0, 15, 4 },
+    { 1, 0, 15, 5 },
+    { 0, 0, 15, 0 },
+    { 0, 0, 15, 1 },
+    { 0, 0, 15, 2 },
+    { 0, 0, 15, 3 },
+    { 0, 0, 15, 4 },
+    { 0, 0, 15, 5 },
+    { 0, 1, 15, 0 },
+    { 0, 1, 15, 1 },
+    { 0, 1, 15, 2 },
+    { 0, 1, 15, 3 },
+    { 0, 1, 15, 4 },
+    { 0, 1, 15, 5 },
+    { 0, 2, 15, 0 },
+    { 0, 2, 15, 1 },
+    { 0, 2, 15, 2 },
+    { 0, 2, 15, 3 },
+    { 0, 2, 15, 4 },
+    { 0, 2, 15, 5 },
+    { 0, 3, 15, 0 },
+    { 0, 3, 15, 1 },
+    { 0, 3, 15, 2 },
+    { 0, 3, 15, 3 },
+    { 0, 3, 15, 4 },
+    { 0, 3, 15, 5 }
 };
 
 struct Chunk
@@ -149,7 +166,7 @@ public:
     {
         int result;
         pthread_mutex_lock(&_mutex);
-        if (_next_task < 24)
+        if (_next_task < total_parameter)
         {
             result = _next_task++;
         }
@@ -343,7 +360,7 @@ void PNGWriter::_process()
     else
     {
         Buffer* buffer = new Buffer();
-        compress(0, buffer);
+        compress(6, buffer);
         unsigned char* content = _file_content.get();
         buffer->flush(content, _file_size);
         _file_content.reset(content);
@@ -381,11 +398,20 @@ void PNGWriter::compress(size_t parameter_index, Buffer* buffer)
     png_set_write_fn(png, reinterpret_cast<void*>(buffer), buffer_write, dummy_flash);
 
     parameter* param = parameters + parameter_index;
-    png_set_compression_strategy(png, param->get_strategy());
-    png_set_compression_window_bits(png, param->get_window_bits());
-    png_set_filter(png, PNG_FILTER_TYPE_BASE, param->get_filter());
-    png_set_compression_level(png, Z_BEST_COMPRESSION);
-    png_set_compression_mem_level(png, MAX_MEM_LEVEL);
+    if (param->get_type() == PNG_WRITER_USE_ZLIB)
+    {
+        png_set_compressor_type(png, PNG_WRITER_USE_ZLIB);
+        png_set_compression_strategy(png, param->get_strategy());
+        png_set_compression_window_bits(png, param->get_window_bits());
+        png_set_filter(png, PNG_FILTER_TYPE_BASE, param->get_filter());
+        png_set_compression_level(png, Z_BEST_COMPRESSION);
+        png_set_compression_mem_level(png, MAX_MEM_LEVEL);
+    }
+    else // PNG_WRITER_USE_ZOPFLI
+    {
+        png_set_compressor_type(png, PNG_WRITER_USE_ZOPFLI);
+        png_set_compression_level(png, 15);
+    }
     bool packing = false;
     if (_index)
     {
