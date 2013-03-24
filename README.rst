@@ -46,12 +46,16 @@ It needs following library. You should download and decompress at the root folde
 
 * `boost_1_53_0 <http://www.boost.org/>`_
 
+It uses Zopfli as submodule. At first you should run following command ::
+
+   $ git submodule int
+   $ git submodule update
+
 It uses following libraries, but these source code are bundled:
 
 * libpng
 * libz
 * jpeglib
-* pngquant
 
 This repository contains a build setting file of SCons. I tested on Mac OS X with MaccPorts environment,
 but maybe work on any scons/gcc environment::
@@ -78,21 +82,62 @@ Use this command like this::
 Options
 ~~~~~~~
 
-:-s, --skip: Skip PNG file size optimization.
-:-b, --benchmark: Display time to process.
-:-v, --verbose: Display compression result.
-:-h, --help: Show this message.
+* ``-s``, ``--skip``:
+
+  Skip PNG file size optimization.
+
+* ``-b``, ``--benchmark``:
+
+  Display time to process.
+
+* ``-v``, ``--verbose``:
+
+  Display compression result.
+
+* ``-h``, ``--help``: Show this message.
 
 Output Options
 ~~~~~~~~~~~~~~
 
-:-16m PATH: 16 bit PNG with 1 bit alpha (RGBA 5551). If source image doesn't have alpha, it generates RGB 565 PNG.
-:-16a PATH: 16 bit PNG with 4 bit alpha (RGBA 4444). If source image doesn't have alpha, it generates RGB 565 PNG.
-:-16 PATH: It is as same as ``-16a`` .
-:-32 PATH: 24/32 bit PNG. It tries several compression option and reduce file size.
-:-p16m PATH: Preview mode of ``-16m``.
-:-p16a PATH: Preview mode of ``-16a``.
-:-p16 PATH: Preview mode of ``-16``.
+* ``-16m`` *PATH*:
+
+  16 bit PNG with 1 bit alpha (RGBA 5551). If source image doesn't have alpha, it generates RGB 565 PNG.
+
+* ``-16a`` *PATH*:
+
+  16 bit PNG with 4 bit alpha (RGBA 4444). If source image doesn't have alpha, it generates RGB 565 PNG.
+
+* ``-16`` *PATH*:
+
+  It is as same as ``-16a`` .
+
+* ``-16i`` *PATH*:
+
+  16 bit PNG with 4 bit alpha (RGBA 4444) and 256 colors palette. If source image doesn't have alpha, it generates RGB 565 PNG.
+
+* ``-32`` *PATH*:
+
+  24/32 bit PNG. It tries several compression option and reduce file size.
+
+* ``-32i`` *PATH*:
+
+  24/32 bit PNG with 256 colors palette. It tries several compression option and reduce file size.
+
+* ``-p16m`` *PATH*:
+
+  Preview mode of ``-16m``.
+
+* ``-p16a`` *PATH*:
+
+  Preview mode of ``-16a``.
+
+* ``-p16`` *PATH*:
+
+  Preview mode of ``-16``.
+
+* ``-p16i`` *PATH*:
+
+  Preview mode of ``-16i``.
 
 Texture Mode / Preview Mode
 ---------------------------
@@ -150,18 +195,43 @@ AdrenoSDK is proveded in Windows execution. So you need wine to install and extr
 
 To create this version, set following flags to scons command:
 
-:--no-opensource: Enable Texture Compression format support
-:--PVRTexLib=DIR: Enable PVRTC Texture Compression convert/preview feature. Default is "./PVRTexLib".
-:--AdrenoSDK=DIR: Enable ATITC Texture Compression convert/preview feature. Default is "~/.wine/drive_c/AdrenoSDK".
+* ``--no-opensource``:
+
+  Enable Texture Compression format support
+
+* ``--PVRTexLib=``\ *DIR*:
+
+  Enable PVRTC Texture Compression convert/preview feature. Default is "./PVRTexLib".
+
+* ``--AdrenoSDK=``\ *DIR*:
+
+  Enable ATITC Texture Compression convert/preview feature. Default is "~/.wine/drive_c/AdrenoSDK".
 
 It adds following output options:
 
-:-pvr PATH: 4 bpp PVRTC compressed texture file
-:-lpvr PATH: 4 bpp PVRTC compressed texture file with legacy format (version 2)
-:-ppvr PATH: Preview mode of PVRTC
-:-atc PATH: 8 bpp ATITC compressed texture file
-:-fatc PATH: 8 bpp ATITC compressed texture file with header information
-:-patc PATH: Preview mode of PVRTC
+* ``-pvr`` *PATH*:
+
+  4 bpp PVRTC compressed texture file
+
+* ``-lpvr`` *PATH*:
+
+  4 bpp PVRTC compressed texture file with legacy format (version 2)
+
+* ``-ppvr`` *PATH*:
+
+  Preview mode of PVRTC
+
+* ``-atc`` *PATH*:
+
+  8 bpp ATITC compressed texture file
+
+* ``-fatc`` *PATH*:
+
+  8 bpp ATITC compressed texture file with header information
+
+* ``-patc`` *PATH*:
+
+  Preview mode of PVRTC
 
 If you use this option, use this program for internal use. You can't distribute your modified source code and/or binary in public.
 If you want to reuse my source code to your product, please sent me Amazon.com or Amazon.co.jp e-mail gift to my address (yoshiki at shibu.jp).
