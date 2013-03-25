@@ -398,15 +398,16 @@ void PNGWriter::compress(size_t parameter_index, Buffer* buffer)
     parameter* param = parameters + parameter_index;
     if (param->get_type() == PNG_WRITER_USE_ZLIB)
     {
+        png_set_filter(png, PNG_FILTER_TYPE_BASE, param->get_filter());
         png_set_compressor_type(png, PNG_WRITER_USE_ZLIB);
         png_set_compression_strategy(png, param->get_strategy());
         png_set_compression_window_bits(png, param->get_window_bits());
-        png_set_filter(png, PNG_FILTER_TYPE_BASE, param->get_filter());
         png_set_compression_level(png, Z_BEST_COMPRESSION);
         png_set_compression_mem_level(png, MAX_MEM_LEVEL);
     }
     else // PNG_WRITER_USE_ZOPFLI
     {
+        png_set_filter(png, PNG_FILTER_TYPE_BASE, param->get_filter());
         png_set_compressor_type(png, PNG_WRITER_USE_ZOPFLI);
         png_set_compression_level(png, 15);
     }
