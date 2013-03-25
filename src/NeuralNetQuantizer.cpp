@@ -27,7 +27,6 @@ void NeuralNetQuantizer::_process()
     int newcolors = 256;
 
     // Start neuquant
-    std::cout << "palinitnet" << std::endl;
     palinitnet(NULL, 0, 1.0, (unsigned char*)_rawsrc.get(), _height * _width * 4, newcolors,
         colour_space, quantization_gamma, alpha_class_correction,
         force_alpha_class_correctness, r_sens, g_sens, b_sens, a_sens,
@@ -37,11 +36,9 @@ void NeuralNetQuantizer::_process()
     int verbose = 0;
     int sample_factor = 1;
     double unisolate = 0.0;
-    std::cout << "learn" << std::endl;
     learn(sample_factor, unisolate, verbose);
 
     int strict_pal_rgba = 0;
-    std::cout << "getcolormap" << std::endl;
     getcolormap((unsigned char*)map, strict_pal_rgba);
     size_t transnum = 0;
 

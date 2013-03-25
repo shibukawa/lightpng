@@ -306,8 +306,6 @@ void PNGWriter::process(buffer_t raw_buffer, palette_t palette, trans_t trans, b
         _palette_size = 255;
         _trans_size = 255;
     }
-    std::cout << "palette size: " << _palette_size << std::endl;
-    std::cout << "trans size: " << _trans_size << std::endl;
     _image_rows.reset(new unsigned char*[_height]);
     for (size_t i = 0; i < _height; ++i)
     {

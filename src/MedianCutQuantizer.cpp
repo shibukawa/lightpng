@@ -94,6 +94,10 @@ void Block::shrink()
 
 inline size_t calcColorCode(int r, int g, int b, int a, int R, int G, int B, int A)
 {
+    r = std::min(255, r);
+    g = std::min(255, g);
+    b = std::min(255, b);
+    a = std::min(255, a);
 	return ((r >> (8 - R)) << (G + B + A)) + ((g >> (8 - G)) << (B + A)) + ((b >> (8 - B)) << A) + (a >> (8 - A));
 }
 
@@ -294,7 +298,7 @@ void MedianCutQuantizer::quantize(size_t R, size_t G, size_t B, size_t A)
     	colorMap[i] = -1;
     }
 
-    while(!blockQueue.empty())
+    while (!blockQueue.empty())
     {
         boost::shared_ptr<Block> block = blockQueue.top();
         _blocks.push_back(block);
