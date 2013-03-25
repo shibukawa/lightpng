@@ -83,13 +83,16 @@ PNGReader::PNGReader(const char* filepath) : Image(), _png(0), _info(0), _channe
     png_read_image(_png, image().get());
     png_read_end(_png, NULL);
 
+    checkHasAlpha();
+
     _valid = true;
 }
 
-bool PNGReader::hasAlpha() const {
+void PNGReader::checkHasAlpha() {
+    _hasAlpha = false;
     if (_channels == 3)
     {
-        return false;
+        return;
     }
     for (size_t y = 0; y < _height; y++)
     {
@@ -98,11 +101,11 @@ bool PNGReader::hasAlpha() const {
         {
             if (row[x * 4 + 3] != 255)
             {
-                return true;
+                _hasAlpha = true;
+                return;
             }
         }
     }
-    return false;
 }
 
 PNGReader::~PNGReader()

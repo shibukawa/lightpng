@@ -14,6 +14,7 @@ static inline void clamp(T& value, int min_value, int max_value)
                     min_value),
                 max_value));
 }
+
 #include <boost/shared_array.hpp>
 
 typedef boost::shared_array<unsigned char*> rows_t;

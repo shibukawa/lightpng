@@ -94,7 +94,7 @@ struct png_struct_def
    int zlib_strategy;         /* holds zlib compression strategy */
 
 #ifdef PNG_WRITE_ZOPFLI_SUPPORTED
-   struct Options zopfli_options; /* Zopfli options */
+   struct ZopfliOptions zopfli_options; /* Zopfli options */
    unsigned char *zopfli_buf;     /* Zopfli source buffer */
    size_t zopfli_len;             /* Zopfli source buffer length */
 #endif

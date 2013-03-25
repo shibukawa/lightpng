@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <stdio.h>
+#include <boost/tr1/unordered_map.hpp>
 #include <pthread.h>
 #include <zlib.h>
 #include <png.h>
@@ -261,8 +262,91 @@ void PNGWriter::process(buffer_t raw_buffer)
     _process();
 }
 
+bool PNGWriter::_can_convert_index_color(buffer_t raw_buffer)
+{
+    boost::unordered_map<unsigned int, unsigned char> colormap;
+    buffer_t indexed_buffer(new unsigned char[_width * _height]);
+    if (_has_alpha)
+    {
+        unsigned char transcolor = 0;
+        unsigned char opaquecolor = 255;
+        for (size_t y = 0; y < _height; y++)
+        {
+            for (size_t x = 0; x < _width; x++)
+            {
+                size_t offset = (y * _width + x) * 4;
+                unsigned char alpha = raw_buffer[offset + 3];
+                unsigned int colorCode = (alpha == 0) ? 0 : (raw_buffer[offset] << 24) + (raw_buffer[offset + 1] << 16) + (raw_buffer[offset + 2]<< 8) + alpha;
+                boost::unordered_map<unsigned int, unsigned char>::iterator existing = colormap.find(colorCode);
+                if (existing != colormap.end())
+                {
+                    indexed_buffer[y * _width + x] = existing->second;
+                }
+                else
+                {
+                    if (alpha == 255)
+                    {
+                        indexed_buffer[y * _width + x] = opaquecolor;
+                        colormap[colorCode] = opaquecolor--;
+                    }
+                    else
+                    {
+                        indexed_buffer[y * _width + x] = transcolor;
+                        colormap[colorCode] = transcolor++;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        unsigned char color = 0;
+        for (size_t y = 0; y < _height; y++)
+        {
+            for (size_t x = 0; x < _width; x++)
+            {
+                size_t offset = (y * _width + x) * 3;
+                unsigned int colorCode = (raw_buffer[offset] << 24) + (raw_buffer[offset + 1] << 16) + (raw_buffer[offset + 2]<< 8) + 255;
+                boost::unordered_map<unsigned int, unsigned char>::iterator existing = colormap.find(colorCode);
+                if (existing != colormap.end())
+                {
+                    indexed_buffer[y * _width + x] = existing->second;
+                }
+                else
+                {
+                    indexed_buffer[y * _width + x] = color;
+                    colormap[colorCode] = color++;
+                }
+            }
+        }
+    }
+    if (colormap.size() > 256)
+    {
+        std::cout << "Can't convert to index color png. It uses " << colormap.size() << " colors." << std::endl;
+        return false;
+    }
+    palette_t palette(new png_color[256]);
+    trans_t trans(new unsigned char[256]);
+    boost::unordered_map<unsigned int, unsigned char>::iterator iter;
+    for (iter = colormap.begin(); iter != colormap.end(); iter++)
+    {
+        unsigned int colorCode = iter->first;
+        palette[iter->second].red = (colorCode >> 24) & 0xff;
+        palette[iter->second].green = (colorCode >> 16) & 0xff;
+        palette[iter->second].blue = (colorCode >> 8) & 0xff;
+        trans[iter->second] = colorCode & 0xff;
+    }
+    std::cout << "Export as index color png (auto convert: " << colormap.size() << " colors are used in this image)" << std::endl;
+    process(indexed_buffer, palette, trans, true);
+    return true;
+}
+
 void PNGWriter::process(buffer_t raw_buffer, bool shrink)
 {
+    if (_optimize && _can_convert_index_color(raw_buffer))
+    {
+        return;
+    }
     if (shrink)
     {
         buffer_t buffer(new unsigned char[_width * _height * 3]);
@@ -277,7 +361,30 @@ void PNGWriter::process(buffer_t raw_buffer, bool shrink)
                 buffer[offset1 + 2] = raw_buffer[offset2 + 2];
             }
         }
+        std::cout << "Export as 24 bit png(unused alpha channel was removed)" << std::endl;
         process(buffer);
+    }
+    else if (_has_alpha)
+    {
+        bool clean = false;
+        for (size_t y = 0; y < _height; y++)
+        {
+            for (size_t x = 0; x < _width; x++)
+            {
+                size_t offset = (y * _width + x) * 4;
+                if (raw_buffer[offset + 3] == 0)
+                {
+                    clean = clean || (raw_buffer[offset] != 0) || (raw_buffer[offset + 1] != 0) || (raw_buffer[offset + 2] != 0);
+                    raw_buffer[offset] = 0;
+                    raw_buffer[offset + 1] = 0;
+                    raw_buffer[offset + 2] = 0;
+                }
+            }
+        }
+        if (clean)
+        {
+            std::cout << "RGB space is cleand" << std::endl;
+        }
     }
     else
     {
@@ -285,10 +392,10 @@ void PNGWriter::process(buffer_t raw_buffer, bool shrink)
     }
 }
 
-void PNGWriter::process(buffer_t raw_buffer, palette_t palette, trans_t trans, bool optimize)
+void PNGWriter::process(buffer_t raw_buffer, palette_t palette, trans_t trans, bool palette_optimize)
 {
     _index = true;
-    if (optimize)
+    if (palette_optimize)
     {
         PaletteOptimizer optimizer(_width, _height);
         optimizer.process8bit(raw_buffer, palette, trans);
@@ -376,7 +483,6 @@ void PNGWriter::write(const char* filepath)
         fclose(fp);
     }
 }
-
 
 void PNGWriter::compress(size_t parameter_index, Buffer* buffer)
 {

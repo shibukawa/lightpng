@@ -19,7 +19,7 @@ public:
     }
     ~PNGWriter();
     void process(buffer_t raw_buffer);
-    void process(buffer_t raw_buffer, palette_t palette, trans_t trans, bool optimize = false);
+    void process(buffer_t raw_buffer, palette_t palette, trans_t trans, bool palette_optimize = false);
     void process(buffer_t raw_buffer, bool shrinkChannel);
     void write(const char* filepath);
     void compress(size_t parameter_index, Buffer* buffer);
@@ -42,6 +42,7 @@ private:
     bool _valid;
 
     void _process();
+    bool _can_convert_index_color(buffer_t raw_buffer);
 };
 
 #endif

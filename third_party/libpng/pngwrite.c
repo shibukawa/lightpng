@@ -890,7 +890,7 @@ png_write_flush(png_structp png_ptr)
        {
            unsigned char *out = 0;
            size_t outsize = 0;
-           ZlibCompress(&png_ptr->zopfli_options, png_ptr->zopfli_buf, png_ptr->zopfli_len, &out, &outsize);
+           ZopfliCompress(&png_ptr->zopfli_options, ZOPFLI_FORMAT_ZLIB, png_ptr->zopfli_buf, png_ptr->zopfli_len, &out, &outsize);
            png_write_IDAT(png_ptr, out, outsize);
            free(out);
            png_free(png_ptr, png_ptr->zopfli_buf);

@@ -569,7 +569,7 @@ png_text_compress(png_structp png_ptr,
    {
       unsigned char *out = 0;
       size_t outsize = 0;
-      ZlibCompress(&png_ptr->zopfli_options, text, text_len, &out, &outsize);
+      ZopfliCompress(&png_ptr->zopfli_options, ZOPFLI_FORMAT_ZLIB, text, text_len, &out, &outsize);
       text_len = outsize;
 
       if (png_ptr->zbuf_size < outsize)
@@ -930,7 +930,7 @@ png_write_IHDR(png_structp png_ptr, png_uint_32 width, png_uint_32 height,
    }
    else
    {
-      InitOptions(&png_ptr->zopfli_options);
+      ZopfliInitOptions(&png_ptr->zopfli_options);
       /* png_ptr->zopfli_options.verbose = default; */
       if (png_ptr->flags & PNG_FLAG_ZLIB_CUSTOM_LEVEL)
          png_ptr->zopfli_options.numiterations = png_ptr->zlib_level;
@@ -2304,7 +2304,7 @@ png_write_finish_row(png_structp png_ptr)
       {
          unsigned char *out = 0;
          size_t outsize = 0;
-         ZlibCompress(&png_ptr->zopfli_options, png_ptr->zopfli_buf, png_ptr->zopfli_len, &out, &outsize);
+         ZopfliCompress(&png_ptr->zopfli_options, ZOPFLI_FORMAT_ZLIB, png_ptr->zopfli_buf, png_ptr->zopfli_len, &out, &outsize);
          png_free(png_ptr, png_ptr->zopfli_buf);
          png_ptr->zopfli_buf = 0;
          png_ptr->zopfli_len = 0;
