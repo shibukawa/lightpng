@@ -2,7 +2,7 @@
 #include <vector>
 #include <queue>
 #include <algorithm>
-#include "MedianCutQuantizer.h"
+#include "MedianCut16bitQuantizer.h"
 
 // This source code uses Median cut algorithm C++.
 // This is an original license.
@@ -184,7 +184,7 @@ public:
     }
 };
 
-short MedianCutQuantizer::searchNearestColor(int r, int g, int b, int a, bool skipAlpha)
+short MedianCut16bitQuantizer::searchNearestColor(int r, int g, int b, int a, bool skipAlpha)
 {
 	double minDistance = 256 * 256 * 5;
 	short index = -1;
@@ -228,7 +228,7 @@ short MedianCutQuantizer::searchNearestColor(int r, int g, int b, int a, bool sk
 }
 
 
-void MedianCutQuantizer::quantize(size_t R, size_t G, size_t B, size_t A)
+void MedianCut16bitQuantizer::quantize(size_t R, size_t G, size_t B, size_t A)
 {
 	unsigned int desiredSize = 256;
 	boost::scoped_array<unsigned char> points(new unsigned char[4 * _width * _height]);
@@ -396,7 +396,7 @@ void MedianCutQuantizer::quantize(size_t R, size_t G, size_t B, size_t A)
 }
 
 
-void MedianCutQuantizer::fixPalette(size_t R, size_t G, size_t B, size_t A)
+void MedianCut16bitQuantizer::fixPalette(size_t R, size_t G, size_t B, size_t A)
 {
     const int ThresholdR = 1 << (8 - R);
     const int ThresholdG = 1 << (8 - G);
@@ -427,9 +427,9 @@ void MedianCutQuantizer::fixPalette(size_t R, size_t G, size_t B, size_t A)
     }
 }
 
-void median_cut_quantize(Image& image, PNGWriter& writer, bool hasAlphaChannel, bool hasAlpha, bool preview)
+void median_cut_16bit_quantize(Image& image, PNGWriter& writer, bool hasAlphaChannel, bool hasAlpha, bool preview)
 {
-    MedianCutQuantizer quantizer(image.width(), image.height());
+    MedianCut16bitQuantizer quantizer(image.width(), image.height());
     quantizer.process(image.image(), hasAlphaChannel);
     if (hasAlpha)
     {

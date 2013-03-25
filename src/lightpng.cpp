@@ -8,8 +8,8 @@
 #include "PNGReader.h"
 #include "JPEGReader.h"
 #include "ReduceColor.h"
-#include "NeuralNetQuantizer.h"
-#include "MedianCutQuantizer.h"
+#include "MedianCut16bitQuantizer.h"
+#include "MedianCut32bitQuantizer.h"
 #include "PNGWriter.h"
 
 void help()
@@ -420,7 +420,7 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 {
                     indexed_reduced_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, true, verbose));
                     double t1 = get_time();
-                    median_cut_quantize(*reader, *indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, false);
+                    median_cut_16bit_quantize(*reader, *indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, false);
                     if (bench)
                     {
                         double t2 = get_time();
@@ -434,7 +434,7 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 {
                     preview_indexed_reduced_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, true, verbose));
                     double t1 = get_time();
-                    median_cut_quantize(*reader, *preview_indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, true);
+                    median_cut_16bit_quantize(*reader, *preview_indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, true);
                     if (bench)
                     {
                         double t2 = get_time();
@@ -462,7 +462,7 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 {
                     indexed_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, true, verbose));
                     double t1 = get_time();
-                    neural_net_quantize(*reader, *indexed_color_png_writer, hasAlphaChannel);
+                    median_cut_32bit_quantize(*reader, *indexed_color_png_writer, hasAlphaChannel);
                     if (bench)
                     {
                         double t2 = get_time();

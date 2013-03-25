@@ -34,13 +34,13 @@ AddOption('--AdrenoSDK',
           default='$HOME/.wine/drive_c/AdrenoSDK',
           help='Enable ATITC Texture Compression convert/preview feature. Default is "~/.wine/drive_c/AdrenoSDK".')
 
-sconscript = ['third_party/zlib', 'third_party/libpng', 'third_party/jpeg', 'third_party/pngnq', 'third_party/zopfli_build']
-sources = ['src/PNGReader.cpp', 'src/JPEGReader.cpp', 'src/PNGWriter.cpp', 'src/MedianCutQuantizer.cpp', 'src/NeuralNetQuantizer.cpp', 'src/PaletteOptimizer.cpp']
-libs = ['png', 'z', 'jpeg', 'pngnq', 'zopfli']
-libpath = ['third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/pngnq', 'third_party/zopfli_build/']
+sconscript = ['third_party/zlib', 'third_party/libpng', 'third_party/jpeg', 'third_party/libimagequant_build/', 'third_party/zopfli_build']
+sources = ['src/PNGReader.cpp', 'src/JPEGReader.cpp', 'src/PNGWriter.cpp', 'src/MedianCut16bitQuantizer.cpp', 'src/MedianCut32bitQuantizer.cpp', 'src/PaletteOptimizer.cpp']
+libs = ['png', 'z', 'jpeg', 'libimagequant', 'zopfli']
+libpath = ['third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/libimagequant_build/', 'third_party/zopfli_build/']
 cpppath = [
     'boost_1_53_0/',
-    'src/', 'third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/pngnq/src/', 'third_party/zopfli/']
+    'src/', 'third_party/zlib/', 'third_party/libpng/', 'third_party/jpeg/', 'third_party/libimagequant/lib/', 'third_party/zopfli/']
 ccflags = []
 linkflags = []
 

@@ -1,5 +1,5 @@
-#ifndef MEDIAN_CUT_QUANTIZER_H
-#define MEDIAN_CUT_QUANTIZER_H
+#ifndef MEDIAN_CUT_16BIT_QUANTIZER_H
+#define MEDIAN_CUT_16BIT_QUANTIZER_H
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -58,10 +58,10 @@ private:
 };
 
 
-class MedianCutQuantizer : public Quantizer
+class MedianCut16bitQuantizer : public Quantizer
 {
 public:
-    explicit MedianCutQuantizer(size_t width, size_t height) : Quantizer(width, height) {}
+    explicit MedianCut16bitQuantizer(size_t width, size_t height) : Quantizer(width, height) {}
 
     void quantize(size_t R, size_t G, size_t B, size_t A);
     void fixPalette(size_t R, size_t G, size_t B, size_t A);
@@ -111,7 +111,7 @@ private:
 };
 
 
-void median_cut_quantize(Image& image, PNGWriter& writer, bool hasAlphaChannel, bool hasAlpha, bool preview);
+void median_cut_16bit_quantize(Image& image, PNGWriter& writer, bool hasAlphaChannel, bool hasAlpha, bool preview);
 
 
 #endif

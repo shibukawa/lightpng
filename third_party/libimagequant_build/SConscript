@@ -1,0 +1,30 @@
+Import('env')
+
+# Does AdrenoSDK use libimagequant?
+duplicate_symbols = [
+    'pam_freeacolorhash',
+    'pam_freeacolorhist',
+    'pam_acolorhashtoacolorhist',
+    'pam_allocacolorhash',
+    'pam_computeacolorhash',
+    'mediancut'
+]
+
+replaceflags = ["-D%(name)s=liq_%(name)s" % {"name": name} for name in duplicate_symbols]
+
+ccflags = ['-O3', '-m32', '-std=c99'] + replaceflags
+
+env.StaticLibrary(
+    'libimagequant',
+    ['../libimagequant/lib/blur.c',
+     '../libimagequant/lib/libimagequant.c',
+     '../libimagequant/lib/mediancut.c',
+     '../libimagequant/lib/mempool.c',
+     '../libimagequant/lib/nearest.c',
+     '../libimagequant/lib/pam.c',
+     '../libimagequant/lib/viter.c'],
+    LIBS=[],
+    LIBPATH=[],
+    CPPPATH=['../libimagequant/lib/'],
+    CCFLAGS = ccflags
+)
