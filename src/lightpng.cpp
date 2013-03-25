@@ -2,12 +2,14 @@
 #include <sys/time.h>
 #include <zlib.h>
 #include <png.h>
+#include <boost/scoped_ptr.hpp>
 #include "lightpng.h"
 #include "Image.h"
 #include "PNGReader.h"
 #include "JPEGReader.h"
 #include "ReduceColor.h"
-#include "ColorQuantizer.h"
+#include "NeuralNetQuantizer.h"
+#include "MedianCutQuantizer.h"
 #include "PNGWriter.h"
 
 void help()
@@ -18,11 +20,7 @@ void help()
               << "It uses NeuQuant Neural-Net Quantization Algorithm Interface" << std::endl
               << "   Copyright (c) 1994 Anthony Dekker" << std::endl
               << std::endl
-    #ifdef TEXTURE
-              << "   Non open source version" << std::endl
-    #else
               << "   Open source version" << std::endl
-    #endif
               << std::endl
               << "Texture file processing tool to use for texture." << std::endl
               << "  * Generetes small file size 16 bit PNG file." << std::endl
@@ -41,10 +39,13 @@ void help()
               << "    or -16 PATH  : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
               << "   -16m PATH     : 16 bit PNG with 1 bit alpha (RGBA 5551)" << std::endl
               << "                 : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
+              << "   -16i PATH     : 16 bit indexed PNG with 4 bit alpha (RGBA 4444)" << std::endl
+              << "                 : If source image doesn't have alpha, it generates RGB 565 PNG." << std::endl
               << "   -32 PATH      : 24/32 bit PNG" << std::endl
-              << "   -i32 PATH     : Indexed 24/32 bit PNG" << std::endl
+              << "   -32i PATH     : Indexed 24/32 bit PNG" << std::endl
               << "   -p16a PATH    : 16 bit PNG with 4 bit alpha (RGBA 4444) preview file" << std::endl
-              << "    or -p16 PATH : 16 bit PNG with 4 bit alpha (RGBA 4444) preview file" << std::endl
+              << "    or -p16 PATH" << std::endl
+              << "   -p16i PATH    : 16 bit Indexed PNG with 4 bit alpha (RGBA 4444) preview file" << std::endl
               << "   -p16m PATH    : 16 bit PNG with 1 bit alpha (RGBA 5551) preview file" << std::endl
               << std::endl;
 }
@@ -171,6 +172,34 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
                     break;
                 }
             }
+            else if ((opt == "-16i") or (opt == "-p16i"))
+            {
+                i++;
+                if (i == argc)
+                {
+                    std::cout << opt << " needs file path" << std::endl;
+                    mode = helpMode;
+                    break;
+                }
+                std::string path(argv[i]);
+                if (check_ext(path, ".png"))
+                {
+                    if (opt == "-16i")
+                    {
+                        outputs.push_back(output_type(IndexedReducedColorPNGFile, path));
+                    }
+                    else
+                    {
+                        outputs.push_back(output_type(PreviewIndexedReducedColorPNGFile, path));
+                    }
+                }
+                else
+                {
+                    std::cout << opt << " file should be .png " << path << std::endl;
+                    mode = helpMode;
+                    break;
+                }
+            }
             else if (opt == "-32")
             {
                 i++;
@@ -183,7 +212,7 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
                 std::string path(argv[i]);
                 if (check_ext(path, ".png"))
                 {
-                    outputs.push_back(output_type(FullColorPNGFile, path));       
+                    outputs.push_back(output_type(FullColorPNGFile, path));
                 }
                 else
                 {
@@ -192,12 +221,12 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
                     break;
                 }
             }
-            else if (opt == "-i32")
+            else if (opt == "-32i")
             {
                 i++;
                 if (i == argc)
                 {
-                    std::cout << "-i32 needs file path" << std::endl;
+                    std::cout << "-32i needs file path" << std::endl;
                     mode = helpMode;
                     break;
                 }
@@ -208,7 +237,7 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
                 }
                 else
                 {
-                    std::cout << "-i32 file should be .png " << path << std::endl;
+                    std::cout << "-32i file should be .png " << path << std::endl;
                     mode = helpMode;
                     break;
                 }
@@ -228,11 +257,12 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
 {
     Image* reader;
     bool hasAlphaChannel = false;
-
+    bool hasAlpha = false;
     if (inputType == PNGFile)
     {
         reader = new PNGReader(input_path);
-        hasAlphaChannel = (dynamic_cast<PNGReader*>(reader)->channels() == 4);
+        hasAlphaChannel = reader->hasAlphaChannel();
+        hasAlpha = reader->hasAlpha();
     }
     else
     {
@@ -241,28 +271,30 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
 
     if (reader->valid())
     {
-        PNGWriter *mask_png_writer = 0;
-        PNGWriter *alpha_png_writer = 0;
-        PNGWriter *noalpha_png_writer = 0;
-        PNGWriter *preview_mask_png_writer = 0;
-        PNGWriter *preview_alpha_png_writer = 0;
-        PNGWriter *preview_noalpha_png_writer = 0;
-        PNGWriter *fullcolor_png_writer = 0;
-        PNGWriter *indexedcolor_png_writer = 0;
-        PNGWriter *reducedindexedcolor_png_writer = 0;
+        boost::scoped_ptr<PNGWriter> mask_png_writer;
+        boost::scoped_ptr<PNGWriter> alpha_png_writer;
+        boost::scoped_ptr<PNGWriter> noalpha_png_writer;
+        boost::scoped_ptr<PNGWriter> preview_mask_png_writer;
+        boost::scoped_ptr<PNGWriter> preview_alpha_png_writer;
+        boost::scoped_ptr<PNGWriter> preview_noalpha_png_writer;
+        boost::scoped_ptr<PNGWriter> fullcolor_png_writer;
+        boost::scoped_ptr<PNGWriter> indexed_color_png_writer;
+        boost::scoped_ptr<PNGWriter> indexed_reduced_color_png_writer;
+        boost::scoped_ptr<PNGWriter> preview_indexed_reduced_color_png_writer;
+
         for (output_list::iterator i = outputs.begin(); i != outputs.end(); ++i)
         {
             OutputFileType outputType = (*i).first;
             switch (outputType)
             {
             case MaskPNGFile:
-                if (hasAlphaChannel)
+                if (hasAlpha)
                 {
                     if (!mask_png_writer)
                     {
-                        mask_png_writer = new PNGWriter(reader, hasAlphaChannel, optimize, verbose);
-                        double t1 = get_time();
-                        mask_png_writer->process(reduce_color<1>(reader, 5, 5, 5, false));
+                        mask_png_writer.reset(new PNGWriter(*reader, hasAlpha, optimize, verbose));
+                        double t1 = get_time(); 
+                        mask_png_writer->process(reduce_color<1>(*reader, 5, 5, 5, true, false));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -275,9 +307,9 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 {
                     if (!noalpha_png_writer)
                     {
-                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, optimize, verbose);
+                        noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, optimize, verbose));
                         double t1 = get_time();
-                        noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, false));
+                        noalpha_png_writer->process(reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, false));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -288,13 +320,13 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 }
                 break;
             case PreviewMaskPNGFile:
-                if (hasAlphaChannel)
+                if (hasAlpha)
                 {
                     if (!preview_mask_png_writer)
                     {
-                        preview_mask_png_writer = new PNGWriter(reader, hasAlphaChannel, false, verbose);
+                        preview_mask_png_writer.reset(new PNGWriter(*reader, hasAlpha, false, verbose));
                         double t1 = get_time();
-                        preview_mask_png_writer->process(reduce_color<1>(reader, 5, 5, 5, true));
+                        preview_mask_png_writer->process(reduce_color<1>(*reader, 5, 5, 5, true, true));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -307,9 +339,9 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 {
                     if (!preview_noalpha_png_writer)
                     {
-                        preview_noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, false, verbose);
+                        preview_noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, false, verbose));
                         double t1 = get_time();
-                        preview_noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, true));
+                        preview_noalpha_png_writer->process(reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, true));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -320,13 +352,13 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 }
                 break;
             case AlphaPNGFile:
-                if (hasAlphaChannel)
+                if (hasAlpha)
                 {
                     if (!alpha_png_writer)
                     {
-                        alpha_png_writer = new PNGWriter(reader, hasAlphaChannel, optimize, verbose);
+                        alpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, optimize, verbose));
                         double t1 = get_time();
-                        alpha_png_writer->process(reduce_color<4>(reader, 4, 4, 4, false));
+                        alpha_png_writer->process(reduce_color<4>(*reader, 4, 4, 4, true, false));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -339,9 +371,9 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 {
                     if (!noalpha_png_writer)
                     {
-                        noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, optimize, verbose);
+                        noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, optimize, verbose));
                         double t1 = get_time();
-                        noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, false));
+                        noalpha_png_writer->process(reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, false));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -352,13 +384,13 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 }
                 break;
             case PreviewAlphaPNGFile:
-                if (hasAlphaChannel)
+                if (hasAlpha)
                 {
                     if (!preview_alpha_png_writer)
                     {
-                        preview_alpha_png_writer = new PNGWriter(reader, hasAlphaChannel, false, verbose);
+                        preview_alpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, false, verbose));
                         double t1 = get_time();
-                        preview_alpha_png_writer->process(reduce_color<4>(reader, 4, 4, 4, true));
+                        preview_alpha_png_writer->process(reduce_color<4>(*reader, 4, 4, 4, true, true));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -371,9 +403,9 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 {
                     if (!preview_noalpha_png_writer)
                     {
-                        preview_noalpha_png_writer = new PNGWriter(reader, hasAlphaChannel, false, verbose);
+                        preview_noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, false, verbose));
                         double t1 = get_time();
-                        preview_noalpha_png_writer->process(reduce_color<0>(reader, 5, 6, 5, true));
+                        preview_noalpha_png_writer->process(reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, true));
                         if (bench)
                         {
                             double t2 = get_time();
@@ -383,12 +415,40 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                     preview_noalpha_png_writer->write((*i).second.c_str());
                 }
                 break;
+            case IndexedReducedColorPNGFile:
+                if (!indexed_reduced_color_png_writer)
+                {
+                    indexed_reduced_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, true, verbose));
+                    double t1 = get_time();
+                    median_cut_quantize(*reader, *indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, false);
+                    if (bench)
+                    {
+                        double t2 = get_time();
+                        std::cout << "16bit Indexed PNG compression: " << t2 - t1 << std::endl;
+                    }
+                }
+                indexed_reduced_color_png_writer->write((*i).second.c_str());
+                break;
+            case PreviewIndexedReducedColorPNGFile:
+                if (!preview_indexed_reduced_color_png_writer)
+                {
+                    preview_indexed_reduced_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, true, verbose));
+                    double t1 = get_time();
+                    median_cut_quantize(*reader, *preview_indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, true);
+                    if (bench)
+                    {
+                        double t2 = get_time();
+                        std::cout << "16bit Indexed PNG compression(Preview): " << t2 - t1 << std::endl;
+                    }
+                }
+                preview_indexed_reduced_color_png_writer->write((*i).second.c_str());
+                break;
             case FullColorPNGFile:
                 if (!fullcolor_png_writer)
                 {
-                    fullcolor_png_writer = new PNGWriter(reader, hasAlphaChannel, true, verbose);
+                    fullcolor_png_writer.reset(new PNGWriter(*reader, hasAlpha, true, verbose));
                     double t1 = get_time();
-                    fullcolor_png_writer->process(reader->raw_image());
+                    fullcolor_png_writer->process(reader->buffer(), !hasAlpha && hasAlphaChannel);
                     if (bench)
                     {
                         double t2 = get_time();
@@ -398,57 +458,20 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 fullcolor_png_writer->write((*i).second.c_str());
                 break;
             case IndexedColorPNGFile:
-                if (!indexedcolor_png_writer)
+                if (!indexed_color_png_writer)
                 {
-                    indexedcolor_png_writer = new PNGWriter(reader, hasAlphaChannel, true, verbose);
+                    indexed_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, true, verbose));
                     double t1 = get_time();
-                    quantize_color(reader, indexedcolor_png_writer);
+                    neural_net_quantize(*reader, *indexed_color_png_writer, hasAlphaChannel);
                     if (bench)
                     {
                         double t2 = get_time();
                         std::cout << "32bit Indexed PNG compression: " << t2 - t1 << std::endl;
                     }
                 }
-                indexedcolor_png_writer->write((*i).second.c_str());
+                indexed_color_png_writer->write((*i).second.c_str());
                 break;
             }
-        }
-        delete reader;
-        if (mask_png_writer)
-        {
-            delete mask_png_writer;
-        }
-        if (alpha_png_writer)
-        {
-            delete alpha_png_writer;
-        }
-        if (noalpha_png_writer)
-        {
-            delete noalpha_png_writer;
-        }
-        if (fullcolor_png_writer)
-        {
-            delete fullcolor_png_writer;
-        }
-        if (indexedcolor_png_writer)
-        {
-            delete indexedcolor_png_writer;
-        }
-        if (reducedindexedcolor_png_writer)
-        {
-            delete reducedindexedcolor_png_writer;
-        }
-        if (preview_mask_png_writer)
-        {
-            delete preview_mask_png_writer;
-        }
-        if (preview_alpha_png_writer)
-        {
-            delete preview_alpha_png_writer;
-        }
-        if (preview_noalpha_png_writer)
-        {
-            delete preview_noalpha_png_writer;
         }
     }
     else
