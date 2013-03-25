@@ -6,17 +6,43 @@ void NeuralNetQuantizer::_process()
     size_t bot_idx, top_idx;  // for remapping of indices
     size_t x;
     size_t remap[MAXNETSIZE];
+    double r_sens = 1.0;
+    double g_sens = 1.0;
+    double b_sens = 1.0;
+    double a_sens = 1.0;
+    double remap_r_sens = 1.0;
+    double remap_g_sens = 1.0;
+    double remap_b_sens = 1.0;
+    double remap_a_sens = 1.0;
+    double force_gamma = 0;
+    int force_alpha_class_correctness = 0;
+    double alpha_class_correction = 0.0;
+    int use_alpha_importance_heuristic = 1;
+    double exclusion_threshold = 0.5;
+    double quantization_gamma = 1.8;
+    int colour_space = RGB;
 
     size_t y;
     unsigned char map[MAXNETSIZE][4];
     int newcolors = 256;
 
     // Start neuquant
-    initnet(_rawsrc.get(), _height * _width * 4, newcolors, 1.0);
+    std::cout << "palinitnet" << std::endl;
+    palinitnet(NULL, 0, 1.0, (unsigned char*)_rawsrc.get(), _height * _width * 4, newcolors,
+        colour_space, quantization_gamma, alpha_class_correction,
+        force_alpha_class_correctness, r_sens, g_sens, b_sens, a_sens,
+        remap_r_sens, remap_g_sens, remap_b_sens, remap_a_sens,
+        exclusion_threshold, use_alpha_importance_heuristic);
+
     int verbose = 0;
-    learn(1, verbose);
-    inxbuild();
-    getcolormap((unsigned char*)map);
+    int sample_factor = 1;
+    double unisolate = 0.0;
+    std::cout << "learn" << std::endl;
+    learn(sample_factor, unisolate, verbose);
+
+    int strict_pal_rgba = 0;
+    std::cout << "getcolormap" << std::endl;
+    getcolormap((unsigned char*)map, strict_pal_rgba);
     size_t transnum = 0;
 
     // Remap indexes so all tRNS chunks are together
