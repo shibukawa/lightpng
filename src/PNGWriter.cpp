@@ -41,7 +41,7 @@ struct parameter
         else
         {
             std::cout << size << " bytes (compressor: zopfli, filter: " << filter_str[filter] << ")" << std::endl;
-                  }
+        }
     }
     int get_type() const { return type; }
     int get_strategy() const { return strategy; }
@@ -385,6 +385,7 @@ void PNGWriter::process(buffer_t raw_buffer, bool shrink)
         {
             std::cout << "RGB space is cleand" << std::endl;
         }
+        process(raw_buffer);
     }
     else
     {
