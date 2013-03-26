@@ -23,7 +23,8 @@ struct parameter
             "Z_DEFAULT_STRATEGY",
             "Z_FILTERED",
             "Z_HUFFMAN_ONLY",
-            "Z_RLE"
+            "Z_RLE",
+            "Z_FIXED"
         };
         static const char* filter_str[] = {
             "PNG_FILTER_NONE",
@@ -60,9 +61,9 @@ struct parameter
     }
 };
 
-const int total_parameter = 30;
+const int total_parameters = 36;
 
-parameter parameters[total_parameter] = {
+parameter parameters[total_parameters] = {
     { 1, 0, 15, 0 },
     { 1, 0, 15, 1 },
     { 1, 0, 15, 2 },
@@ -92,7 +93,13 @@ parameter parameters[total_parameter] = {
     { 0, 3, 15, 2 },
     { 0, 3, 15, 3 },
     { 0, 3, 15, 4 },
-    { 0, 3, 15, 5 }
+    { 0, 3, 15, 5 },
+    { 0, 4, 15, 0 },
+    { 0, 4, 15, 1 },
+    { 0, 4, 15, 2 },
+    { 0, 4, 15, 3 },
+    { 0, 4, 15, 4 },
+    { 0, 4, 15, 5 }
 };
 
 struct Chunk
@@ -149,8 +156,8 @@ private:
 class MultithreadTask
 {
 public:
-    MultithreadTask(PNGWriter* writer, bool verbose)
-        : _next_task(0), _best_size(1 << 31), _best_index(-1), _writer(writer),
+    MultithreadTask(PNGWriter* writer, size_t start_parameter, size_t end_parameter, bool verbose)
+        : _next_task(start_parameter), _last_task(end_parameter), _best_size(1 << 31), _best_index(-1), _writer(writer),
           _best_result(0), _verbose(verbose)
     {
         pthread_mutex_init(&_mutex, NULL);
@@ -167,7 +174,7 @@ public:
     {
         int result;
         pthread_mutex_lock(&_mutex);
-        if (_next_task < total_parameter)
+        if (_next_task < _last_task)
         {
             result = _next_task++;
         }
@@ -210,7 +217,8 @@ public:
 
 private:
     pthread_mutex_t _mutex;
-    int _next_task;
+    size_t _next_task;
+    size_t _last_task;
     size_t _best_size;
     int _best_index;
     PNGWriter* _writer;
@@ -322,7 +330,10 @@ bool PNGWriter::_can_convert_index_color(buffer_t raw_buffer)
     }
     if (colormap.size() > 256)
     {
-        std::cout << "Can't convert to index color png. It uses " << colormap.size() << " colors." << std::endl;
+        if (_verbose)
+        {
+            std::cout << "Can't convert to index color png. It uses " << colormap.size() << " colors." << std::endl;
+        }
         return false;
     }
     palette_t palette(new png_color[256]);
@@ -336,60 +347,69 @@ bool PNGWriter::_can_convert_index_color(buffer_t raw_buffer)
         palette[iter->second].blue = (colorCode >> 8) & 0xff;
         trans[iter->second] = colorCode & 0xff;
     }
-    std::cout << "Export as index color png (auto convert: " << colormap.size() << " colors are used in this image)" << std::endl;
+    if (_verbose)
+    {
+        std::cout << "Export as index color png (auto convert: " << colormap.size() << " colors are used in this image)" << std::endl;
+    }
     process(indexed_buffer, palette, trans, true);
     return true;
 }
 
 void PNGWriter::process(buffer_t raw_buffer, bool shrink)
 {
-    if (_optimize && _can_convert_index_color(raw_buffer))
+    if (_optimize == 0)
     {
-        return;
+        process(raw_buffer);
     }
-    if (shrink)
+    else if (!_can_convert_index_color(raw_buffer))
     {
-        buffer_t buffer(new unsigned char[_width * _height * 3]);
-        for (size_t y = 0; y < _height; y++)
+        if (shrink)
         {
-            for (size_t x = 0; x < _width; x++)
+            buffer_t buffer(new unsigned char[_width * _height * 3]);
+            for (size_t y = 0; y < _height; y++)
             {
-                size_t offset1 = (y * _width + x) * 3;
-                size_t offset2 = (y * _width + x) * 4;
-                buffer[offset1]     = raw_buffer[offset2];
-       	        buffer[offset1 + 1] = raw_buffer[offset2 + 1];
-                buffer[offset1 + 2] = raw_buffer[offset2 + 2];
-            }
-        }
-        std::cout << "Export as 24 bit png(unused alpha channel was removed)" << std::endl;
-        process(buffer);
-    }
-    else if (_has_alpha)
-    {
-        bool clean = false;
-        for (size_t y = 0; y < _height; y++)
-        {
-            for (size_t x = 0; x < _width; x++)
-            {
-                size_t offset = (y * _width + x) * 4;
-                if (raw_buffer[offset + 3] == 0)
+                for (size_t x = 0; x < _width; x++)
                 {
-                    clean = clean || (raw_buffer[offset] != 0) || (raw_buffer[offset + 1] != 0) || (raw_buffer[offset + 2] != 0);
-                    raw_buffer[offset] = 0;
-                    raw_buffer[offset + 1] = 0;
-                    raw_buffer[offset + 2] = 0;
+                    size_t offset1 = (y * _width + x) * 3;
+                    size_t offset2 = (y * _width + x) * 4;
+                    buffer[offset1]     = raw_buffer[offset2];
+           	        buffer[offset1 + 1] = raw_buffer[offset2 + 1];
+                    buffer[offset1 + 2] = raw_buffer[offset2 + 2];
                 }
             }
+            if (_verbose)
+            {
+                std::cout << "Export as 24 bit png(unused alpha channel was removed)" << std::endl;
+            }
+            process(buffer);
         }
-        if (clean)
+        else if (_has_alpha)
         {
-            std::cout << "RGB space is cleand" << std::endl;
+            bool clean = false;
+            for (size_t y = 0; y < _height; y++)
+            {
+                for (size_t x = 0; x < _width; x++)
+                {
+                    size_t offset = (y * _width + x) * 4;
+                    if (raw_buffer[offset + 3] == 0)
+                    {
+                        clean = clean || (raw_buffer[offset] != 0) || (raw_buffer[offset + 1] != 0) || (raw_buffer[offset + 2] != 0);
+                        raw_buffer[offset] = 0;
+                        raw_buffer[offset + 1] = 0;
+                        raw_buffer[offset + 2] = 0;
+                    }
+                }
+            }
+            if (clean && _verbose)
+            {
+                std::cout << "RGB space is cleand" << std::endl;
+            }
+            process(raw_buffer);
         }
-        process(raw_buffer);
-    }
-    else
-    {
-        process(raw_buffer);
+        else
+        {
+            process(raw_buffer);
+        }
     }
 }
 
@@ -424,55 +444,85 @@ void PNGWriter::process(buffer_t raw_buffer, palette_t palette, trans_t trans, b
 
 void PNGWriter::_process()
 {
-    if (_optimize)
+    Buffer* buffer;
+    unsigned char* content;
+    int best;
+
+    switch (_optimize)
     {
-        int rc;
-        pthread_attr_t attr;
-        pthread_attr_init(&attr);
-        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-        MultithreadTask task(this, _verbose);
-        pthread_t threads[8];
-        for (size_t i = 0; i < 8; ++i)
-        {
-            rc = pthread_create(&threads[i], &attr, MultithreadTask::thread_main, reinterpret_cast<void*>(&task));
-            if (rc)
-            {
-                std::cout << "pthread create error" << std::endl;
-            }
-        }
-        for (size_t i = 0; i < 8; ++i)
-        {
-            void* status;
-            rc = pthread_join(threads[i], &status);
-            if (rc)
-            {
-                std::cout << "pthread join error" << std::endl;
-            }
-        }
-        int best_index = task.best_index();
-        if (best_index > -1)
-        {
-            if (_verbose)
-            {
-                std::cout << "best result: ";
-                parameters[best_index].print(task.best_size());
-            }
-            unsigned char* content = _file_content.get();
-            task.flush(content, _file_size);
-            _file_content.reset(content);
-            _valid = true;
-        }
-    }
-    else
-    {
-        Buffer* buffer = new Buffer();
+    case 0:
+        buffer = new Buffer();
         compress(6, buffer);
-        unsigned char* content = _file_content.get();
+        content = _file_content.get();
         buffer->flush(content, _file_size);
         _file_content.reset(content);
         delete buffer;
         _valid = true;
+        break;
+    case 1:
+        _optimizeWithOptions(6, 30, true);
+        break;
+    case 2:
+        best = _optimizeWithOptions(6, 12, false);
+        if (best > 0)
+        {
+            _optimizeWithOptions(best - 6, best - 5, true);
+        }
+        break;
+    case 3:
+        _optimizeWithOptions(0, 30, true);
+        break;
     }
+}
+
+int PNGWriter::_optimizeWithOptions(size_t start_parameter, size_t end_parameter, bool show_result)
+{
+    int rc;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    MultithreadTask task(this, start_parameter, end_parameter, _verbose);
+    size_t threadCount = std::min(static_cast<size_t>(8), end_parameter - start_parameter);
+    pthread_t threads[8];
+    for (size_t i = 0; i < threadCount; ++i)
+    {
+        rc = pthread_create(&threads[i], &attr, MultithreadTask::thread_main, reinterpret_cast<void*>(&task));
+        if (rc)
+        {
+            std::cerr << "pthread create error" << std::endl;
+        }
+    }
+    for (size_t i = 0; i < threadCount; ++i)
+    {
+        void* status;
+        rc = pthread_join(threads[i], &status);
+        if (rc)
+        {
+            std::cerr << "pthread join error" << std::endl;
+        }
+    }
+    int best_index = task.best_index();
+    if (best_index > -1)
+    {
+        if (show_result && _verbose)
+        {
+            if (threadCount == 1)
+            {
+                std::cout << "Result: ";
+            }
+            else
+            {
+                std::cout << "Best Result: ";
+            }
+            parameters[best_index].print(task.best_size());
+        }
+        unsigned char* content = _file_content.get();
+        task.flush(content, _file_size);
+        _file_content.reset(content);
+        _valid = true;
+        return best_index;
+    }
+    return -1;
 }
 
 void PNGWriter::write(const char* filepath)

@@ -10,7 +10,7 @@ class Buffer;
 class PNGWriter
 {
 public:
-    PNGWriter(Image& image, bool has_alpha, bool optimize, bool verbose)
+    PNGWriter(Image& image, bool has_alpha, size_t optimize, bool verbose)
         : _width(0), _height(0), _file_size(0),
           _has_alpha(has_alpha), _index(false), _optimize(optimize), _verbose(verbose), _valid(0)
     {
@@ -37,12 +37,13 @@ private:
     size_t _trans_size;
     bool _has_alpha;
     bool _index;
-    bool _optimize;
+    size_t _optimize;
     bool _verbose;
     bool _valid;
 
     void _process();
     bool _can_convert_index_color(buffer_t raw_buffer);
+    int _optimizeWithOptions(size_t start_paramter, size_t end_parameter, bool show_result);
 };
 
 #endif
