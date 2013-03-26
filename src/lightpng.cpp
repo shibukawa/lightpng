@@ -29,10 +29,14 @@ void help()
               << "usage> lightpng [options] input_image.png/jpg [output options]" << std::endl
               << std::endl
               << "  [options]" << std::endl
-              << "   -s, --skip      : Skip optimization for PNG file size" << std::endl
-              << "   -b, --benchmark : Display compression time" << std::endl
-              << "   -v, --verbose   : Display compression result" << std::endl
-              << "   -h, --help      : Show this message" << std::endl
+              << "   -o, --optimize [level] : Select optimization level" << std::endl
+              << "                          : 0 - No optimize (fastest)" << std::endl
+              << "                          : 1 - PNG zlib option optimize + index color optimize(default)" << std::endl
+              << "                          : 2 - Use zopfli with one fiilter + 1" << std::endl
+              << "                          : 3 - Use zopfli with all filters + 1" << std::endl
+              << "   -b, --benchmark        : Display compression time" << std::endl
+              << "   -v, --verbose          : Display compression result" << std::endl
+              << "   -h, --help             : Show this message" << std::endl
               << std::endl
               << "  [output options]" << std::endl
               << "   -16a PATH     : 16 bit PNG with 4 bit alpha (RGBA 4444)" << std::endl
@@ -70,7 +74,7 @@ double get_time(void)
 }
 
 
-void parse_arg(int argc, const char** argv, const char*& input, output_list& outputs, bool& optimize, bool& bench, bool& verbose, Mode& mode, InputFileType& inputType)
+void parse_arg(int argc, const char** argv, const char*& input, output_list& outputs, size_t& optimize, bool& bench, bool& verbose, Mode& mode, InputFileType& inputType)
 {
     int state = 0;
     for (int i = 1; i < argc; ++i)
@@ -83,9 +87,38 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
         }
         if (state == 0)
         {
-            if (opt == "-s" or opt == "--skip")
+            if (opt == "-o" or opt == "--optimize")
             {
-                optimize = false;
+                ++i;
+                if (i == argc)
+                {
+                    std::cout << opt << " needs optimize level (0-3)." << std::endl;
+                    mode = helpMode;
+                    break;
+                }
+                std::string level(argv[i]);
+                if (level == "0")
+                {
+                    optimize = 0;
+                }
+                else if (level == "1")
+                {
+                    optimize = 1;
+                }
+                else if (level == "2")
+                {
+                    optimize = 2;
+                }
+                else if (level == "3")
+                {
+                    optimize = 3;
+                }
+                else
+                {
+                    std::cout << " Optimization level should be 0-3, but was " << level << "." << std::endl;
+                    mode = helpMode;
+                    break;
+                }
             }
             else if (opt == "-b" or opt == "--benchmark")
             {
@@ -253,7 +286,7 @@ void parse_arg(int argc, const char** argv, const char*& input, output_list& out
 }
 
 
-void process_image(const char*& input_path, output_list& outputs, bool optimize, bool bench, bool verbose, Mode& mode, InputFileType& inputType)
+void process_image(const char*& input_path, output_list& outputs, size_t optimize, bool bench, bool verbose, Mode& mode, InputFileType& inputType)
 {
     Image* reader;
     bool hasAlphaChannel = false;
@@ -324,7 +357,7 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 {
                     if (!preview_mask_png_writer)
                     {
-                        preview_mask_png_writer.reset(new PNGWriter(*reader, hasAlpha, false, verbose));
+                        preview_mask_png_writer.reset(new PNGWriter(*reader, hasAlpha, 0, verbose));
                         double t1 = get_time();
                         preview_mask_png_writer->process(reduce_color<1>(*reader, 5, 5, 5, true, true));
                         if (bench)
@@ -339,7 +372,7 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 {
                     if (!preview_noalpha_png_writer)
                     {
-                        preview_noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, false, verbose));
+                        preview_noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, 0, verbose));
                         double t1 = get_time();
                         preview_noalpha_png_writer->process(reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, true));
                         if (bench)
@@ -388,7 +421,7 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 {
                     if (!preview_alpha_png_writer)
                     {
-                        preview_alpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, false, verbose));
+                        preview_alpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, 0, verbose));
                         double t1 = get_time();
                         preview_alpha_png_writer->process(reduce_color<4>(*reader, 4, 4, 4, true, true));
                         if (bench)
@@ -403,7 +436,7 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
                 {
                     if (!preview_noalpha_png_writer)
                     {
-                        preview_noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, false, verbose));
+                        preview_noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, 0, verbose));
                         double t1 = get_time();
                         preview_noalpha_png_writer->process(reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, true));
                         if (bench)
@@ -418,7 +451,7 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
             case IndexedReducedColorPNGFile:
                 if (!indexed_reduced_color_png_writer)
                 {
-                    indexed_reduced_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, true, verbose));
+                    indexed_reduced_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, optimize, verbose));
                     double t1 = get_time();
                     median_cut_16bit_quantize(*reader, *indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, false);
                     if (bench)
@@ -432,7 +465,7 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
             case PreviewIndexedReducedColorPNGFile:
                 if (!preview_indexed_reduced_color_png_writer)
                 {
-                    preview_indexed_reduced_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, true, verbose));
+                    preview_indexed_reduced_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, 0, verbose));
                     double t1 = get_time();
                     median_cut_16bit_quantize(*reader, *preview_indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, true);
                     if (bench)
@@ -446,7 +479,7 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
             case FullColorPNGFile:
                 if (!fullcolor_png_writer)
                 {
-                    fullcolor_png_writer.reset(new PNGWriter(*reader, hasAlpha, true, verbose));
+                    fullcolor_png_writer.reset(new PNGWriter(*reader, hasAlpha, optimize, verbose));
                     double t1 = get_time();
                     fullcolor_png_writer->process(reader->buffer(), !hasAlpha && hasAlphaChannel);
                     if (bench)
@@ -460,7 +493,7 @@ void process_image(const char*& input_path, output_list& outputs, bool optimize,
             case IndexedColorPNGFile:
                 if (!indexed_color_png_writer)
                 {
-                    indexed_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, true, verbose));
+                    indexed_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, optimize, verbose));
                     double t1 = get_time();
                     median_cut_32bit_quantize(*reader, *indexed_color_png_writer, hasAlphaChannel);
                     if (bench)
@@ -486,9 +519,10 @@ int main(int argc, const char** argv)
     output_list outputs;
     Mode mode = textureMode;
     InputFileType inputType;
-    bool optimize = true;
+    size_t optimize = 1;
     bool bench = false;
     bool verbose = false;
+    int result;
 
     parse_arg(argc, argv, input_path, outputs, optimize, bench, verbose, mode, inputType);
 
@@ -500,10 +534,12 @@ int main(int argc, const char** argv)
     if (mode == helpMode)
     {
         help();
-        return 1;
+        result = 1;
     }
-
-    process_image(input_path, outputs, optimize, bench, verbose, mode, inputType);
-
-    return 0;
+    else
+    {
+        process_image(input_path, outputs, optimize, bench, verbose, mode, inputType);
+        result = 0;
+    }
+    return result;
 }
