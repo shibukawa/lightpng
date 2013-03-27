@@ -14,33 +14,33 @@ public:
 
     buffer_t buffer()
     {
-        return _dest;
+        return dest_;
     }
     palette_t palette()
     {
-        return _palette;
+        return palette_;
     }
     trans_t trans()
     {
-        return _trans;
+        return trans_;
     }
     size_t palette_size()
     {
-        return _palette_size;
+        return palette_size_;
     }
     size_t trans_size()
     {
-        return _trans_size;
+        return trans_size_;
     }
 
 private:
-    buffer_t _dest;
-    size_t _size;
-    size_t _pixelsize;
-    palette_t _palette;
-    size_t _palette_size;
-    trans_t _trans;
-    size_t _trans_size;
+    buffer_t dest_;
+    size_t size_;
+    size_t pixelsize_;
+    palette_t palette_;
+    size_t palette_size_;
+    trans_t trans_;
+    size_t trans_size_;
 };
 
 #endif

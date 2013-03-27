@@ -37,35 +37,35 @@ ATCWriter::~ATCWriter()
 
 void ATCWriter::process(buffer_t srcRawData, bool hasAlpha)
 {
-    BitChanger expander(_width, _height, hasAlpha, srcRawData);
-    _size = expander.height();
+    BitChanger expander(width_, height_, hasAlpha, srcRawData);
+    size_ = expander.height();
 
-    _texture = CreateEmptyTexture();
-    _texture->nWidth = _size;
-    _texture->nHeight = _size;
-    _texture->nDataSize = 0;
-    _texture->pData = NULL; 
+    texture_ = CreateEmptyTexture();
+    texture_->nWidth = size_;
+    texture_->nHeight = size_;
+    texture_->nDataSize = 0;
+    texture_->pData = NULL; 
 
     TQonvertImage* srcImage = CreateEmptyTexture();
     srcImage->nFormat = Q_FORMAT_RGBA_8888;
-    srcImage->nWidth = _size;
-    srcImage->nHeight = _size;
-    srcImage->nDataSize = _size * _size * 4;
+    srcImage->nWidth = size_;
+    srcImage->nHeight = size_;
+    srcImage->nDataSize = size_ * size_ * 4;
     srcImage->pData = expander.buffer().get();
 
     if (hasAlpha)
     {
-        _texture->nFormat = Q_FORMAT_ATITC_RGBA;
-        Qonvert(srcImage, _texture);
-        _texture->pData = new unsigned char[_texture->nDataSize];
-        Qonvert(srcImage, _texture);
+        texture_->nFormat = Q_FORMAT_ATITC_RGBA;
+        Qonvert(srcImage, texture_);
+        texture_->pData = new unsigned char[texture_->nDataSize];
+        Qonvert(srcImage, texture_);
     }
     else
     {
-        _texture->nFormat = Q_FORMAT_ATITC_RGB;
-        Qonvert(srcImage, _texture);
-        _texture->pData = new unsigned char[_texture->nDataSize];
-        Qonvert(srcImage, _texture);
+        texture_->nFormat = Q_FORMAT_ATITC_RGB;
+        Qonvert(srcImage, texture_);
+        texture_->pData = new unsigned char[texture_->nDataSize];
+        Qonvert(srcImage, texture_);
     }
     FreeTexture(srcImage);
 };
@@ -75,7 +75,7 @@ void ATCWriter::write(const char* filepath)
     FILE* out = fopen(filepath, "w");
     if(out)
     {
-        fwrite(_texture->pData, _texture->nDataSize, 1, out);
+        fwrite(texture_->pData, texture_->nDataSize, 1, out);
         fclose(out);
     }
 };
@@ -85,19 +85,19 @@ void ATCWriter::writeWithHeader(const char* filepath)
     FILE* out = fopen(filepath, "w");
     if(out)
     {
-        int format = _texture->nFormat;
-        if (_texture->nFormat == Q_FORMAT_ATITC_RGBA)
+        int format = texture_->nFormat;
+        if (texture_->nFormat == Q_FORMAT_ATITC_RGBA)
         {
-            _texture->nFormat = 20;
+            texture_->nFormat = 20;
         }
         else
         {
-            _texture->nFormat = 21;
+            texture_->nFormat = 21;
         }
-        fwrite(_texture, sizeof(TQonvertImage), 1, out);
-        fwrite(_texture->pData, _texture->nDataSize, 1, out);
+        fwrite(texture_, sizeof(TQonvertImage), 1, out);
+        fwrite(texture_->pData, texture_->nDataSize, 1, out);
         fclose(out);
-        _texture->nFormat = format;
+        texture_->nFormat = format;
     }
 };
 
@@ -105,17 +105,17 @@ void ATCWriter::writeToPNG(const char* filepath)
 {
     TQonvertImage* temp = CreateEmptyTexture();
     temp->nFormat = Q_FORMAT_RGBA_8888;
-    temp->nWidth = _size;
-    temp->nHeight = _size;
-    temp->nDataSize = _size * _size * 4;
+    temp->nWidth = size_;
+    temp->nHeight = size_;
+    temp->nDataSize = size_ * size_ * 4;
     temp->pData = new unsigned char[temp->nDataSize];
-    Qonvert(_texture, temp);
+    Qonvert(texture_, temp);
 
     png_bytep raw_data = temp->pData;
-    png_bytepp raw_list = new png_bytep[_height];
-    for (size_t i = 0; i < _height; ++i)
+    png_bytepp raw_list = new png_bytep[height_];
+    for (size_t i = 0; i < height_; ++i)
     {
-        raw_list[i] = raw_data + (_size * i * 4);
+        raw_list[i] = raw_data + (size_ * i * 4);
     }
 
     FILE *fp = std::fopen(filepath, "wb");
@@ -141,7 +141,7 @@ void ATCWriter::writeToPNG(const char* filepath)
 
     png_init_io(png, fp);
     png_set_compression_level(png, Z_BEST_COMPRESSION);
-    png_set_IHDR(png, info, _width, _height, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+    png_set_IHDR(png, info, width_, height_, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
     png_write_info(png, info);
     png_write_image(png, raw_list);
     png_write_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
@@ -152,8 +152,8 @@ void ATCWriter::writeToPNG(const char* filepath)
 
 void ATCWriter::destroy()
 {
-    if (_texture)
+    if (texture_)
     {
-        FreeTexture(_texture, true);
+        FreeTexture(texture_, true);
     }
 };

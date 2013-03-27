@@ -11,11 +11,11 @@ class PNGWriter
 {
 public:
     PNGWriter(Image& image, bool has_alpha, size_t optimize, bool verbose)
-        : _width(0), _height(0), _file_size(0),
-          _has_alpha(has_alpha), _index(false), _optimize(optimize), _verbose(verbose), _valid(0)
+        : width_(0), height_(0), file_size_(0),
+          has_alpha_(has_alpha), index_(false), optimize_(optimize), verbose_(verbose), valid_(0)
     {
-        _width = image.width();
-        _height = image.height();
+        width_ = image.width();
+        height_ = image.height();
     }
     ~PNGWriter();
     void process(buffer_t raw_buffer);
@@ -25,25 +25,25 @@ public:
     void compress(size_t parameter_index, Buffer* buffer);
 
 private:
-    buffer_t _raw_buffer;
-    rows_t _image_rows;
-    buffer_t _file_content;
-    palette_t _palette;
-    trans_t _trans;
-    size_t _width;
-    size_t _height;
-    size_t _file_size;
-    size_t _palette_size;
-    size_t _trans_size;
-    bool _has_alpha;
-    bool _index;
-    size_t _optimize;
-    bool _verbose;
-    bool _valid;
+    buffer_t raw_buffer_;
+    rows_t image_rows_;
+    buffer_t file_content_;
+    palette_t palette_;
+    trans_t trans_;
+    size_t width_;
+    size_t height_;
+    size_t file_size_;
+    size_t palette_size_;
+    size_t trans_size_;
+    bool has_alpha_;
+    bool index_;
+    size_t optimize_;
+    bool verbose_;
+    bool valid_;
 
-    void _process();
-    bool _can_convert_index_color(buffer_t raw_buffer);
-    int _optimizeWithOptions(size_t start_paramter, size_t end_parameter, bool show_result);
+    void process_();
+    bool can_convert_index_color_(buffer_t raw_buffer);
+    int optimizeWithOptions_(size_t start_paramter, size_t end_parameter, bool show_result);
 };
 
 #endif

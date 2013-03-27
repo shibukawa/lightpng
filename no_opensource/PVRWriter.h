@@ -13,7 +13,7 @@ class PVRWriter
 {
 public:
     explicit PVRWriter(size_t width, size_t height)
-        : _pvr(0), _header(0), _width(width), _height(height), _size(0) {}
+        : pvr_(0), header_(0), width_(width), height_(height), size_(0) {}
     virtual ~PVRWriter();
 
     void process(buffer_t src, bool hasAlpha);
@@ -22,9 +22,9 @@ public:
     void writeToPNG(const char* filepath);
 
 private:
-    pvrtexture::CPVRTexture* _pvr;
-    pvrtexture::CPVRTextureHeader* _header;
-    size_t _width, _height, _size;
+    pvrtexture::CPVRTexture* pvr_;
+    pvrtexture::CPVRTextureHeader* header_;
+    size_t width_, height_, size_;
 
     void destroy();
 };

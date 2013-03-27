@@ -111,7 +111,7 @@ struct Chunk
 class Buffer
 {
 public:
-    Buffer() : _totalsize(0) {}
+    Buffer() : totalsize_(0) {}
     ~Buffer() {
         std::vector<Chunk>::iterator i;
         for (i = chunks_.begin(); i != chunks_.end(); ++i)
@@ -122,7 +122,7 @@ public:
 
     size_t size() const
     {
-        return _totalsize;
+        return totalsize_;
     }
 
     void write(png_bytep data, png_size_t length)
@@ -132,12 +132,12 @@ public:
         memcpy(chunk.buffer, data, length);
         chunk.size = length;
         chunks_.push_back(chunk);
-        _totalsize += length;
+        totalsize_ += length;
     }
 
     void flush(unsigned char*& destination, size_t& filesize) const
     {
-        destination = new png_byte[_totalsize];
+        destination = new png_byte[totalsize_];
         size_t offset = 0;
         std::vector<Chunk>::const_iterator i;
         for (i = chunks_.begin(); i != chunks_.end(); ++i)
@@ -145,85 +145,85 @@ public:
             memcpy(destination + offset, (*i).buffer, (*i).size);
             offset += (*i).size;
         }
-        filesize = _totalsize;
+        filesize = totalsize_;
     }
 
 private:
     std::vector<Chunk> chunks_;
-    size_t _totalsize;
+    size_t totalsize_;
 };
 
 class MultithreadTask
 {
 public:
     MultithreadTask(PNGWriter* writer, size_t start_parameter, size_t end_parameter, bool verbose)
-        : _next_task(start_parameter), _last_task(end_parameter), _best_size(1 << 31), _best_index(-1), _writer(writer),
-          _best_result(0), _verbose(verbose)
+        : next_task_(start_parameter), last_task_(end_parameter), best_size_(1 << 31), best_index_(-1), writer_(writer),
+          best_result_(0), verbose_(verbose)
     {
-        pthread_mutex_init(&_mutex, NULL);
+        pthread_mutex_init(&mutex_, NULL);
     }
     ~MultithreadTask()
     {
-        pthread_mutex_destroy(&_mutex);
-        if (_best_result)
+        pthread_mutex_destroy(&mutex_);
+        if (best_result_)
         {
-            delete _best_result;
+            delete best_result_;
         }
     }
     int get_next()
     {
         int result;
-        pthread_mutex_lock(&_mutex);
-        if (_next_task < _last_task)
+        pthread_mutex_lock(&mutex_);
+        if (next_task_ < last_task_)
         {
-            result = _next_task++;
+            result = next_task_++;
         }
         else
         {
             result = -1;
         }
-        pthread_mutex_unlock(&_mutex);
+        pthread_mutex_unlock(&mutex_);
         return result;
     }
     void store_result(Buffer* buffer, size_t index)
     {
-        pthread_mutex_lock(&_mutex);
-        if (buffer->size() < _best_size)
+        pthread_mutex_lock(&mutex_);
+        if (buffer->size() < best_size_)
         {
-            _best_size = buffer->size();
-            _best_index = index;
-            if (_best_result)
+            best_size_ = buffer->size();
+            best_index_ = index;
+            if (best_result_)
             {
-                delete _best_result;
+                delete best_result_;
             }
-            _best_result = buffer;
+            best_result_ = buffer;
         }
-        if (_verbose)
+        if (verbose_)
         {
             parameter* param = parameters + index;
             param->print(buffer->size());
         }
-        pthread_mutex_unlock(&_mutex);
+        pthread_mutex_unlock(&mutex_);
     }
-    size_t best_size() const { return _best_size; }
-    int best_index() const { return _best_index; }
+    size_t best_size() const { return best_size_; }
+    int best_index() const { return best_index_; }
     void flush(unsigned char*& file_content, size_t& filesize) const {
-        if (_best_result)
+        if (best_result_)
         {
-            _best_result->flush(file_content, filesize);
+            best_result_->flush(file_content, filesize);
         }
     }
     static void* thread_main(void* param);
 
 private:
-    pthread_mutex_t _mutex;
-    size_t _next_task;
-    size_t _last_task;
-    size_t _best_size;
-    int _best_index;
-    PNGWriter* _writer;
-    Buffer* _best_result;
-    bool _verbose;
+    pthread_mutex_t mutex_;
+    size_t next_task_;
+    size_t last_task_;
+    size_t best_size_;
+    int best_index_;
+    PNGWriter* writer_;
+    Buffer* best_result_;
+    bool verbose_;
 };
 
 
@@ -234,7 +234,7 @@ void* MultithreadTask::thread_main(void* param)
     while (parameter_index != -1)
     {
         Buffer* buffer = new Buffer();
-        self->_writer->compress(parameter_index, buffer);
+        self->writer_->compress(parameter_index, buffer);
         self->store_result(buffer, parameter_index);
         parameter_index = self->get_next();
     }
@@ -260,46 +260,46 @@ PNGWriter::~PNGWriter()
 
 void PNGWriter::process(buffer_t raw_buffer)
 {
-    _raw_buffer = raw_buffer;
-    _image_rows.reset(new unsigned char*[_height]);
-    size_t pixelSize = (_has_alpha) ? 4 : 3;
-    for (size_t i = 0; i < _height; ++i)
+    raw_buffer_ = raw_buffer;
+    image_rows_.reset(new unsigned char*[height_]);
+    size_t pixelSize = (has_alpha_) ? 4 : 3;
+    for (size_t i = 0; i < height_; ++i)
     {
-        _image_rows[i] = raw_buffer.get() + i * _width * pixelSize;
+        image_rows_[i] = raw_buffer.get() + i * width_ * pixelSize;
     }
-    _process();
+    process_();
 }
 
-bool PNGWriter::_can_convert_index_color(buffer_t raw_buffer)
+bool PNGWriter::can_convert_index_color_(buffer_t raw_buffer)
 {
     boost::unordered_map<unsigned int, unsigned char> colormap;
-    buffer_t indexed_buffer(new unsigned char[_width * _height]);
-    if (_has_alpha)
+    buffer_t indexed_buffer(new unsigned char[width_ * height_]);
+    if (has_alpha_)
     {
         unsigned char transcolor = 0;
         unsigned char opaquecolor = 255;
-        for (size_t y = 0; y < _height; y++)
+        for (size_t y = 0; y < height_; y++)
         {
-            for (size_t x = 0; x < _width; x++)
+            for (size_t x = 0; x < width_; x++)
             {
-                size_t offset = (y * _width + x) * 4;
+                size_t offset = (y * width_ + x) * 4;
                 unsigned char alpha = raw_buffer[offset + 3];
                 unsigned int colorCode = (alpha == 0) ? 0 : (raw_buffer[offset] << 24) + (raw_buffer[offset + 1] << 16) + (raw_buffer[offset + 2]<< 8) + alpha;
                 boost::unordered_map<unsigned int, unsigned char>::iterator existing = colormap.find(colorCode);
                 if (existing != colormap.end())
                 {
-                    indexed_buffer[y * _width + x] = existing->second;
+                    indexed_buffer[y * width_ + x] = existing->second;
                 }
                 else
                 {
                     if (alpha == 255)
                     {
-                        indexed_buffer[y * _width + x] = opaquecolor;
+                        indexed_buffer[y * width_ + x] = opaquecolor;
                         colormap[colorCode] = opaquecolor--;
                     }
                     else
                     {
-                        indexed_buffer[y * _width + x] = transcolor;
+                        indexed_buffer[y * width_ + x] = transcolor;
                         colormap[colorCode] = transcolor++;
                     }
                 }
@@ -309,20 +309,20 @@ bool PNGWriter::_can_convert_index_color(buffer_t raw_buffer)
     else
     {
         unsigned char color = 0;
-        for (size_t y = 0; y < _height; y++)
+        for (size_t y = 0; y < height_; y++)
         {
-            for (size_t x = 0; x < _width; x++)
+            for (size_t x = 0; x < width_; x++)
             {
-                size_t offset = (y * _width + x) * 3;
+                size_t offset = (y * width_ + x) * 3;
                 unsigned int colorCode = (raw_buffer[offset] << 24) + (raw_buffer[offset + 1] << 16) + (raw_buffer[offset + 2]<< 8) + 255;
                 boost::unordered_map<unsigned int, unsigned char>::iterator existing = colormap.find(colorCode);
                 if (existing != colormap.end())
                 {
-                    indexed_buffer[y * _width + x] = existing->second;
+                    indexed_buffer[y * width_ + x] = existing->second;
                 }
                 else
                 {
-                    indexed_buffer[y * _width + x] = color;
+                    indexed_buffer[y * width_ + x] = color;
                     colormap[colorCode] = color++;
                 }
             }
@@ -330,7 +330,7 @@ bool PNGWriter::_can_convert_index_color(buffer_t raw_buffer)
     }
     if (colormap.size() > 256)
     {
-        if (_verbose)
+        if (verbose_)
         {
             std::cout << "Can't convert to index color png. It uses " << colormap.size() << " colors." << std::endl;
         }
@@ -347,7 +347,7 @@ bool PNGWriter::_can_convert_index_color(buffer_t raw_buffer)
         palette[iter->second].blue = (colorCode >> 8) & 0xff;
         trans[iter->second] = colorCode & 0xff;
     }
-    if (_verbose)
+    if (verbose_)
     {
         std::cout << "Export as index color png (auto convert: " << colormap.size() << " colors are used in this image)" << std::endl;
     }
@@ -357,27 +357,27 @@ bool PNGWriter::_can_convert_index_color(buffer_t raw_buffer)
 
 void PNGWriter::process(buffer_t raw_buffer, bool shrink)
 {
-    if (_optimize == 0)
+    if (optimize_ == 0)
     {
         process(raw_buffer);
     }
-    else if (!_can_convert_index_color(raw_buffer))
+    else if (!can_convert_index_color_(raw_buffer))
     {
         if (shrink)
         {
-            buffer_t buffer(new unsigned char[_width * _height * 3]);
-            Image::copy_4_to_3(_width, _height, raw_buffer, buffer);
-            if (_verbose)
+            buffer_t buffer(new unsigned char[width_ * height_ * 3]);
+            Image::copy_4_to_3(width_, height_, raw_buffer, buffer);
+            if (verbose_)
             {
                 std::cout << "Export as 24 bit png(unused alpha channel was removed)" << std::endl;
             }
             process(buffer);
         }
-        else if (_has_alpha)
+        else if (has_alpha_)
         {
-            buffer_t buffer(new unsigned char[_width * _height * 3]);
-            bool clean = Image::copy_4_to_4(_width, _height, raw_buffer, buffer, true);
-            if (clean && _verbose)
+            buffer_t buffer(new unsigned char[width_ * height_ * 3]);
+            bool clean = Image::copy_4_to_4(width_, height_, raw_buffer, buffer, true);
+            if (clean && verbose_)
             {
                 std::cout << "RGB space is cleand" << std::endl;
             }
@@ -392,73 +392,73 @@ void PNGWriter::process(buffer_t raw_buffer, bool shrink)
 
 void PNGWriter::process(buffer_t raw_buffer, palette_t palette, trans_t trans, bool palette_optimize)
 {
-    _index = true;
+    index_ = true;
     if (palette_optimize)
     {
-        PaletteOptimizer optimizer(_width, _height);
+        PaletteOptimizer optimizer(width_, height_);
         optimizer.process8bit(raw_buffer, palette, trans);
-        _raw_buffer = optimizer.buffer();
-        _palette = optimizer.palette();
-        _trans = optimizer.trans();
-        _palette_size = optimizer.palette_size();
-        _trans_size = optimizer.trans_size();
+        raw_buffer_ = optimizer.buffer();
+        palette_ = optimizer.palette();
+        trans_ = optimizer.trans();
+        palette_size_ = optimizer.palette_size();
+        trans_size_ = optimizer.trans_size();
     }
     else
     {
-        _raw_buffer = raw_buffer;
-        _palette = palette;
-        _trans = trans;
-        _palette_size = 255;
-        _trans_size = 255;
+        raw_buffer_ = raw_buffer;
+        palette_ = palette;
+        trans_ = trans;
+        palette_size_ = 255;
+        trans_size_ = 255;
     }
-    _image_rows.reset(new unsigned char*[_height]);
-    for (size_t i = 0; i < _height; ++i)
+    image_rows_.reset(new unsigned char*[height_]);
+    for (size_t i = 0; i < height_; ++i)
     {
-        _image_rows[i] = _raw_buffer.get() + i * _width;
+        image_rows_[i] = raw_buffer_.get() + i * width_;
     }
-    _process();
+    process_();
 }
 
-void PNGWriter::_process()
+void PNGWriter::process_()
 {
     Buffer* buffer;
     unsigned char* content;
     int best;
 
-    switch (_optimize)
+    switch (optimize_)
     {
     case 0:
         buffer = new Buffer();
         compress(6, buffer);
-        content = _file_content.get();
-        buffer->flush(content, _file_size);
-        _file_content.reset(content);
+        content = file_content_.get();
+        buffer->flush(content, file_size_);
+        file_content_.reset(content);
         delete buffer;
-        _valid = true;
+        valid_ = true;
         break;
     case 1:
-        _optimizeWithOptions(6, 30, true);
+        optimizeWithOptions_(6, 30, true);
         break;
     case 2:
-        best = _optimizeWithOptions(6, 12, false);
+        best = optimizeWithOptions_(6, 12, false);
         if (best > 0)
         {
-            _optimizeWithOptions(best - 6, best - 5, true);
+            optimizeWithOptions_(best - 6, best - 5, true);
         }
         break;
     case 3:
-        _optimizeWithOptions(0, 30, true);
+        optimizeWithOptions_(0, 30, true);
         break;
     }
 }
 
-int PNGWriter::_optimizeWithOptions(size_t start_parameter, size_t end_parameter, bool show_result)
+int PNGWriter::optimizeWithOptions_(size_t start_parameter, size_t end_parameter, bool show_result)
 {
     int rc;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    MultithreadTask task(this, start_parameter, end_parameter, _verbose);
+    MultithreadTask task(this, start_parameter, end_parameter, verbose_);
     size_t threadCount = std::min(static_cast<size_t>(8), end_parameter - start_parameter);
     pthread_t threads[8];
     for (size_t i = 0; i < threadCount; ++i)
@@ -481,7 +481,7 @@ int PNGWriter::_optimizeWithOptions(size_t start_parameter, size_t end_parameter
     int best_index = task.best_index();
     if (best_index > -1)
     {
-        if (show_result && _verbose)
+        if (show_result && verbose_)
         {
             if (threadCount == 1)
             {
@@ -493,10 +493,10 @@ int PNGWriter::_optimizeWithOptions(size_t start_parameter, size_t end_parameter
             }
             parameters[best_index].print(task.best_size());
         }
-        unsigned char* content = _file_content.get();
-        task.flush(content, _file_size);
-        _file_content.reset(content);
-        _valid = true;
+        unsigned char* content = file_content_.get();
+        task.flush(content, file_size_);
+        file_content_.reset(content);
+        valid_ = true;
         return best_index;
     }
     return -1;
@@ -504,10 +504,10 @@ int PNGWriter::_optimizeWithOptions(size_t start_parameter, size_t end_parameter
 
 void PNGWriter::write(const char* filepath)
 {
-    if (_valid)
+    if (valid_)
     {
         FILE * fp = fopen(filepath, "wb");
-        fwrite(_file_content.get(), 1 , _file_size , fp);
+        fwrite(file_content_.get(), 1 , file_size_ , fp);
         fclose(fp);
     }
 }
@@ -546,40 +546,40 @@ void PNGWriter::compress(size_t parameter_index, Buffer* buffer)
         png_set_compression_level(png, 15);
     }
     bool packing = false;
-    if (_index)
+    if (index_)
     {
         size_t bitlength = 8;
-        if (_palette_size <= 2)
+        if (palette_size_ <= 2)
         {
             bitlength = 1;
             packing = true;
         }
-        else if (_palette_size <= 4)
+        else if (palette_size_ <= 4)
         {
             bitlength = 2;
             packing = true;
         }
-        else if (_palette_size <= 16)
+        else if (palette_size_ <= 16)
         {
             bitlength = 4;
             packing = true;
         }
-        png_set_IHDR(png, info, _width, _height, bitlength, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
+        png_set_IHDR(png, info, width_, height_, bitlength, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
             PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
-        png_set_PLTE(png, info, _palette.get(), _palette_size);
-        if (_trans_size > 0)
+        png_set_PLTE(png, info, palette_.get(), palette_size_);
+        if (trans_size_ > 0)
         {
-            png_set_tRNS(png, info, _trans.get(), _trans_size, NULL);
+            png_set_tRNS(png, info, trans_.get(), trans_size_, NULL);
         }
     }
-    else if (_has_alpha)
+    else if (has_alpha_)
     {
-        png_set_IHDR(png, info, _width, _height, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
+        png_set_IHDR(png, info, width_, height_, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
             PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
     }
     else
     {
-        png_set_IHDR(png, info, _width, _height, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+        png_set_IHDR(png, info, width_, height_, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
             PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
     }
     png_write_info(png, info);
@@ -587,6 +587,6 @@ void PNGWriter::compress(size_t parameter_index, Buffer* buffer)
     {
         png_set_packing(png);
     }
-    png_write_image(png, _image_rows.get());
+    png_write_image(png, image_rows_.get());
     png_write_end(png, info);
 };

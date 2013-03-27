@@ -4,9 +4,9 @@
 #include "PaletteOptimizer.h"
 
 PaletteOptimizer::PaletteOptimizer(size_t width, size_t height)
-    : _palette_size(0), _trans_size(0)
+    : palette_size_(0), trans_size_(0)
 {
-    _size = width * height;
+    size_ = width * height;
 };
 
 bool PaletteOptimizer::process32bit(buffer_t src)
@@ -21,18 +21,18 @@ void PaletteOptimizer::process8bit(buffer_t src , palette_t palette, trans_t tra
 {
     boost::unordered_map<unsigned char, unsigned char> palette_convert;
     boost::unordered_map<unsigned int, unsigned char> optimized_palette;
-    boost::unordered_set<unsigned char> used_palette;
+    boost::unordered_set<unsigned char> usedpalette_;
 
-    for (size_t i = 0; i < _size; i++)
+    for (size_t i = 0; i < size_; i++)
     {
-        used_palette.insert(src[i]);
+        usedpalette_.insert(src[i]);
     }
     boost::unordered_set<unsigned char>::iterator it;
 
     for (size_t i = 0; i < 256; i++)
     {
         unsigned char c = static_cast<unsigned char>(i);
-        if (used_palette.find(c) == used_palette.end())
+        if (usedpalette_.find(c) == usedpalette_.end())
         {
             continue;
         }
@@ -48,27 +48,27 @@ void PaletteOptimizer::process8bit(buffer_t src , palette_t palette, trans_t tra
             optimized_palette[color] = c;
             if (trans[i] != 255)
             {
-                _trans_size++;
+                trans_size_++;
             }
         }
     }
-    _dest.reset(new unsigned char[_size]);
-    _palette_size = optimized_palette.size();
-    _palette.reset(new png_color[_palette_size]);
-    _trans.reset(new unsigned char[_trans_size]);
+    dest_.reset(new unsigned char[size_]);
+    palette_size_ = optimized_palette.size();
+    palette_.reset(new png_color[palette_size_]);
+    trans_.reset(new unsigned char[trans_size_]);
     boost::unordered_map<unsigned int, unsigned char>::iterator iter;
     for (iter = optimized_palette.begin(); iter != optimized_palette.end(); iter++)
     {
         size_t offset = palette_convert[iter->second];
-        _palette[offset] = palette[iter->second];
-        if (offset < _trans_size)
+        palette_[offset] = palette[iter->second];
+        if (offset < trans_size_)
         {
-            _trans[offset] = trans[iter->second];
+            trans_[offset] = trans[iter->second];
         }
     }
-    for (size_t i = 0; i < _size; i++)
+    for (size_t i = 0; i < size_; i++)
     {
-        _dest[i] = palette_convert[src[i]];
+        dest_[i] = palette_convert[src[i]];
     }
 }
 

@@ -10,17 +10,17 @@ class Quantizer
 {
 public:
     explicit Quantizer(size_t width, size_t height)
-    	: _width(width), _height(height)
+    	: width_(width), height_(height)
 	{
-	    _rawsrc.reset(new unsigned char[4 * width * height]);
-	    _rawdest.reset(new unsigned char[width * height]);
-	    _src.reset(new unsigned char*[height]);
-	    for (size_t i = 0; i < _height; ++i)
+	    rawsrc_.reset(new unsigned char[4 * width * height]);
+	    rawdest_.reset(new unsigned char[width * height]);
+	    src_.reset(new unsigned char*[height]);
+	    for (size_t i = 0; i < height_; ++i)
 	    {
-	        _src[i] = _rawsrc.get() + (i * width * 4);
+	        src_[i] = rawsrc_.get() + (i * width * 4);
 	    }
-	    _palette.reset(new png_color[256]);
-	    _trans.reset(new unsigned char[256]);
+	    palette_.reset(new png_color[256]);
+	    trans_.reset(new unsigned char[256]);
 	};
     virtual ~Quantizer() {}
 
@@ -28,47 +28,47 @@ public:
     {
         if (hasAlphaChannel)
 	    {
-	    	Image::copy_4_to_4(_width, _height, src, _src);
+	    	Image::copy_4_to_4(width_, height_, src, src_);
 	    }
 	    else
 	    {
-	    	Image::copy_3_to_4(_width, _height, src, _src);
+	    	Image::copy_3_to_4(width_, height_, src, src_);
 	    }
-	    _process();
+	    process_();
 	}
     void process(buffer_t src, bool hasAlphaChannel)
     {
         if (hasAlphaChannel)
 	    {
-	    	Image::copy_4_to_4(_width, _height, src, _rawsrc);
+	    	Image::copy_4_to_4(width_, height_, src, rawsrc_);
 	    }
 	    else
 	    {
-	    	Image::copy_3_to_4(_width, _height, src, _rawsrc);
+	    	Image::copy_3_to_4(width_, height_, src, rawsrc_);
 	    }
-	    _process();
+	    process_();
 	}
     buffer_t buffer()
     {
-        return _rawdest;
+        return rawdest_;
     };
     palette_t palette()
     {
-        return _palette;
+        return palette_;
     };
     trans_t trans()
     {
-        return _trans;
+        return trans_;
     }
 
 protected:
-    rows_t _src;
-    buffer_t _rawsrc;
-    buffer_t _rawdest;
-    size_t _width, _height;
-    palette_t _palette;
-    trans_t _trans;
-    virtual void _process() {}
+    rows_t src_;
+    buffer_t rawsrc_;
+    buffer_t rawdest_;
+    size_t width_, height_;
+    palette_t palette_;
+    trans_t trans_;
+    virtual void process_() {}
 };
 
 #endif

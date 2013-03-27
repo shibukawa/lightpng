@@ -6,17 +6,17 @@
 class Image
 {
 public:
-    size_t width() const throw() { return _width; }
-    size_t height() const throw() { return _height; }
-    rows_t image() const { return _rows; }
-    buffer_t buffer() const { return _data; }
+    size_t width() const throw() { return width_; }
+    size_t height() const throw() { return height_; }
+    rows_t image() const { return rows_; }
+    buffer_t buffer() const { return data_; }
 
     virtual bool hasAlpha() const { return false; }
     virtual bool hasAlphaChannel() const { return false; }
 
-    operator void*() const { return _valid ? const_cast<Image*>(this) : 0; }
-    bool operator!() const { return !_valid; }
-    bool valid() const { return _valid; }
+    operator void*() const { return valid_ ? const_cast<Image*>(this) : 0; }
+    bool operator!() const { return !valid_; }
+    bool valid() const { return valid_; }
 
     virtual ~Image() {}
 
@@ -124,21 +124,21 @@ public:
         }
     }
 protected:
-    explicit Image() : _width(0), _height(0), _valid(false) {}
+    explicit Image() : width_(0), height_(0), valid_(false) {}
 
     void alloc(size_t pixelBytes)
     {
-        _data.reset(new unsigned char[pixelBytes * _width * _height]);
-        _rows.reset(new unsigned char*[_height]);
-        for (size_t i = 0; i < _height; ++i)
+        data_.reset(new unsigned char[pixelBytes * width_ * height_]);
+        rows_.reset(new unsigned char*[height_]);
+        for (size_t i = 0; i < height_; ++i)
         {
-            _rows[i] = _data.get() + (i * _width * pixelBytes);
+            rows_[i] = data_.get() + (i * width_ * pixelBytes);
         }
     }
-    buffer_t _data;
-    rows_t _rows;
-    size_t _width, _height;
-    bool _valid;
+    buffer_t data_;
+    rows_t rows_;
+    size_t width_, height_;
+    bool valid_;
 };
 
 #endif

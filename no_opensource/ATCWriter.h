@@ -8,7 +8,7 @@ class ATCWriter
 {
 public:
     explicit ATCWriter(size_t width, size_t height)
-        : _texture(0), _width(width), _height(height), _size(0) {}
+        : texture_(0), width_(width), height_(height), size_(0) {}
     virtual ~ATCWriter();
 
     void process(buffer_t src, bool hasAlpha);
@@ -17,8 +17,8 @@ public:
     void writeToPNG(const char* filepath);
 
 private:
-    TQonvertImage* _texture;
-    size_t _width, _height, _size;
+    TQonvertImage* texture_;
+    size_t width_, height_, size_;
 
     void destroy();
 };

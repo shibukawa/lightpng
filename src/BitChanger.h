@@ -12,8 +12,8 @@ public:
         : Image()
     {
         size_t size = pow(2, ceil(log2(fmax(width, height))));
-        _width = size;
-        _height = size;
+        width_ = size;
+        height_ = size;
 
         alloc(4);
 
@@ -27,29 +27,29 @@ public:
                 {
                     size_t src_offset = y * width + x;
                     size_t dest_offset = y * size + x;
-                    _data[dest_offset * 4]     = src[src_offset * bytePerPixel];
-                    _data[dest_offset * 4 + 1] = src[src_offset * bytePerPixel + 1];       
-                    _data[dest_offset * 4 + 2] = src[src_offset * bytePerPixel + 2];
+                    data_[dest_offset * 4]     = src[src_offset * bytePerPixel];
+                    data_[dest_offset * 4 + 1] = src[src_offset * bytePerPixel + 1];       
+                    data_[dest_offset * 4 + 2] = src[src_offset * bytePerPixel + 2];
                     if (useAlpha)
                     {
-                        _data[dest_offset * 4 + 3] = src[src_offset * bytePerPixel + 3];
+                        data_[dest_offset * 4 + 3] = src[src_offset * bytePerPixel + 3];
                     }
                     else
                     {
-                        _data[dest_offset * 4 + 3] = 255;
+                        data_[dest_offset * 4 + 3] = 255;
                     }
                 }
                 else
                 {
                     size_t dest_offset = y * size + x;
-                    _data[dest_offset * 4] = 0;
-                    _data[dest_offset * 4 + 1] = 0;
-                    _data[dest_offset * 4 + 2] = 0;
-                    _data[dest_offset * 4 + 3] = 0;
+                    data_[dest_offset * 4] = 0;
+                    data_[dest_offset * 4 + 1] = 0;
+                    data_[dest_offset * 4 + 2] = 0;
+                    data_[dest_offset * 4 + 3] = 0;
                 }
             }
         }
-        _valid = true;
+        valid_ = true;
     }
 };
 

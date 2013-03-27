@@ -5,8 +5,8 @@
 
 JPEGReader::JPEGReader(const char* filepath) : Image()
 {
-    jpeg_create_decompress(&_jpeginfo);
-    _jpeginfo.err = jpeg_std_error(&_jpegerr);
+    jpeg_create_decompress(&jpeginfo_);
+    jpeginfo_.err = jpeg_std_error(&jpegerr_);
 
     FILE* fp = fopen(filepath, "rb");
     if (!fp)
@@ -14,32 +14,32 @@ JPEGReader::JPEGReader(const char* filepath) : Image()
         std::cout << "Input file not found: " << filepath << std::endl;
         return;
     }
-    jpeg_stdio_src(&_jpeginfo, fp);
-    jpeg_read_header(&_jpeginfo, TRUE);
-    jpeg_start_decompress(&_jpeginfo);
+    jpeg_stdio_src(&jpeginfo_, fp);
+    jpeg_read_header(&jpeginfo_, TRUE);
+    jpeg_start_decompress(&jpeginfo_);
 
-    if (_jpeginfo.out_color_components != 3)
+    if (jpeginfo_.out_color_components != 3)
     {
         std::cout << "This program support only 24 bit image." << std::endl;
         fclose(fp);
         return;
     }
-    _width = _jpeginfo.output_width;
-    _height = _jpeginfo.output_height;
+    width_ = jpeginfo_.output_width;
+    height_ = jpeginfo_.output_height;
 
     alloc(3);
 
-    while(_jpeginfo.output_scanline < _jpeginfo.output_height)
+    while(jpeginfo_.output_scanline < jpeginfo_.output_height)
     {
-        jpeg_read_scanlines(&_jpeginfo,
-            image().get() + _jpeginfo.output_scanline,
-            _jpeginfo.output_height - _jpeginfo.output_scanline
+        jpeg_read_scanlines(&jpeginfo_,
+            image().get() + jpeginfo_.output_scanline,
+            jpeginfo_.output_height - jpeginfo_.output_scanline
         );
     }
 
-    jpeg_finish_decompress(&_jpeginfo);
+    jpeg_finish_decompress(&jpeginfo_);
     fclose(fp);
-    _valid = true;
+    valid_ = true;
 }
 
 JPEGReader::~JPEGReader()
@@ -49,5 +49,5 @@ JPEGReader::~JPEGReader()
 
 void JPEGReader::destroy()
 {
-    jpeg_destroy_decompress(&_jpeginfo);
+    jpeg_destroy_decompress(&jpeginfo_);
 }

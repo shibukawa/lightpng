@@ -12,17 +12,17 @@ public:
     explicit PNGReader(const char* filepath);
     virtual ~PNGReader();
 
-    bool hasAlpha() const { return _hasAlpha; };
-    bool hasAlphaChannel() const { return _channels == 4; }
+    bool hasAlpha() const { return hasAlpha_; };
+    bool hasAlphaChannel() const { return channels_ == 4; }
 
-    size_t channels() const throw() { return _channels; }
+    size_t channels() const throw() { return channels_; }
 
 private:
-    png_structp _png;
-    png_infop _info, _end;
+    png_structp png_;
+    png_infop info_, end_;
 
-    bool _hasAlpha;
-    size_t _channels;
+    bool hasAlpha_;
+    size_t channels_;
 
     void checkHasAlpha();
 

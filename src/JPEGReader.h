@@ -12,8 +12,8 @@ public:
     ~JPEGReader();
 
 private:
-    jpeg_decompress_struct _jpeginfo;
-    jpeg_error_mgr _jpegerr;
+    jpeg_decompress_struct jpeginfo_;
+    jpeg_error_mgr jpegerr_;
 
     void destroy();
 };

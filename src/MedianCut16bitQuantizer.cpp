@@ -35,14 +35,14 @@ Retrieved from: http://en.literateprograms.org/Median_cut_algorithm_(C_Plus_Plus
 
 Block::Block(Point* points, int pointsLength)
 {
-    this->_points = points;
-    this->_pointsLength = pointsLength;
+    this->points_ = points;
+    this->pointsLength_ = pointsLength;
     for(int i=0; i < NUM_DIMENSIONS; i++)
     {
-        _minCorner.x[i] = std::numeric_limits<unsigned char>::min();
-        _maxCorner.x[i] = std::numeric_limits<unsigned char>::max();
+        minCorner_.x[i] = std::numeric_limits<unsigned char>::min();
+        maxCorner_.x[i] = std::numeric_limits<unsigned char>::max();
     }
-    _colorIndex = -1;
+    colorIndex_ = -1;
 }
 
 int Block::calcLongestSide(int R, int G, int B, int A)
@@ -53,8 +53,8 @@ int Block::calcLongestSide(int R, int G, int B, int A)
     int loop = (A == 256) ? NUM_DIMENSIONS - 1 : NUM_DIMENSIONS;
     for(int i=0; i < loop; i++)
     {
-  		int maxNum = _maxCorner.x[i];
-   		int minNum = _minCorner.x[i];
+  		int maxNum = maxCorner_.x[i];
+   		int minNum = minCorner_.x[i];
         int diff = maxNum - minNum;
    		int maxArea = maxNum / thresholds[i];
    		int minArea = minNum / thresholds[i];
@@ -68,8 +68,8 @@ int Block::calcLongestSide(int R, int G, int B, int A)
             maxIndex = i;
         }
     }
-    _longestSideIndex = maxIndex;
-    _longestSideLength = m;
+    longestSideIndex_ = maxIndex;
+    longestSideLength_ = m;
 }
 bool Block::operator<(const Block& rhs) const
 {
@@ -80,14 +80,14 @@ void Block::shrink()
     int i,j;
     for(j=0; j<NUM_DIMENSIONS; j++)
     {
-        _minCorner.x[j] = _maxCorner.x[j] = _points[0].x[j];
+        minCorner_.x[j] = maxCorner_.x[j] = points_[0].x[j];
     }
-    for(i=1; i < _pointsLength; i++)
+    for(i=1; i < pointsLength_; i++)
     {
         for(j=0; j<NUM_DIMENSIONS; j++)
         {
-            _minCorner.x[j] = min(_minCorner.x[j], _points[i].x[j]);
-            _maxCorner.x[j] = max(_maxCorner.x[j], _points[i].x[j]);
+            minCorner_.x[j] = min(minCorner_.x[j], points_[i].x[j]);
+            maxCorner_.x[j] = max(maxCorner_.x[j], points_[i].x[j]);
         }
     }
 }
@@ -106,12 +106,12 @@ void Block::setColorIndex(int R, int G, int B, int A, size_t colorIndex, boost::
 	size_t stepR = 1 << (8 - R);
 	size_t stepG = 1 << (8 - G);
 	size_t stepB = 1 << (8 - B);
-	size_t minR = _minCorner.x[0];
-	size_t minG = _minCorner.x[1];
-	size_t minB = _minCorner.x[2];
-	size_t maxR = _maxCorner.x[0] + stepR;
-	size_t maxG = _maxCorner.x[1] + stepG;
-	size_t maxB = _maxCorner.x[2] + stepB;
+	size_t minR = minCorner_.x[0];
+	size_t minG = minCorner_.x[1];
+	size_t minB = minCorner_.x[2];
+	size_t maxR = maxCorner_.x[0] + stepR;
+	size_t maxG = maxCorner_.x[1] + stepG;
+	size_t maxB = maxCorner_.x[2] + stepB;
 	if (A == 0)
 	{
 		for (int r = minR; r < maxR; r += stepR)
@@ -129,8 +129,8 @@ void Block::setColorIndex(int R, int G, int B, int A, size_t colorIndex, boost::
 	else
 	{
 		size_t stepA = 1 << (8 - A);
-		size_t minA = _minCorner.x[3];
-		size_t maxA = _maxCorner.x[3] + stepA;
+		size_t minA = minCorner_.x[3];
+		size_t maxA = maxCorner_.x[3] + stepA;
 		for (int r = minR; r < maxR; r += stepR)
 		{
 			for (int g = minG; g < maxG; g += stepG)
@@ -146,24 +146,24 @@ void Block::setColorIndex(int R, int G, int B, int A, size_t colorIndex, boost::
 			}
 		}
 	}
-	_colorIndex = colorIndex;
+	colorIndex_ = colorIndex;
 }
 
 void Block::calcAverageColor(unsigned char& new_r, unsigned char& new_g, unsigned char& new_b, unsigned char& new_a)
 {
     double sum[NUM_DIMENSIONS] = {0, 0, 0, 0};
-    for(int i=0; i < _pointsLength; i++)
+    for(int i=0; i < pointsLength_; i++)
     {
         for(int j=0; j < NUM_DIMENSIONS; j++)
         {
-        	int value = (int)_points[i].x[j];
+        	int value = (int)points_[i].x[j];
             sum[j] = sum[j] + value;
         }
     }
-    new_r = sum[0] / _pointsLength;
-    new_g = sum[1] / _pointsLength;
-    new_b = sum[2] / _pointsLength;
-    new_a = sum[3] / _pointsLength;
+    new_r = sum[0] / pointsLength_;
+    new_g = sum[1] / pointsLength_;
+    new_b = sum[2] / pointsLength_;
+    new_a = sum[3] / pointsLength_;
 }
 
 class CompareBlock {
@@ -191,7 +191,7 @@ short MedianCut16bitQuantizer::searchNearestColor(int r, int g, int b, int a, bo
 	std::vector<boost::shared_ptr<Block> >::iterator i;
 	if (skipAlpha)
 	{
-		for (i = _blocks.begin(); i != _blocks.end(); i++)
+		for (i = blocks_.begin(); i != blocks_.end(); i++)
 		{
 			Point* min = (*i)->minCorner();
 			Point* max = (*i)->maxCorner();
@@ -208,7 +208,7 @@ short MedianCut16bitQuantizer::searchNearestColor(int r, int g, int b, int a, bo
 	}
 	else
 	{
-		for (i = _blocks.begin(); i != _blocks.end(); i++)
+		for (i = blocks_.begin(); i != blocks_.end(); i++)
 		{
 			Point* min = (*i)->minCorner();
 			Point* max = (*i)->maxCorner();
@@ -231,12 +231,12 @@ short MedianCut16bitQuantizer::searchNearestColor(int r, int g, int b, int a, bo
 void MedianCut16bitQuantizer::quantize(size_t R, size_t G, size_t B, size_t A)
 {
 	unsigned int desiredSize = 256;
-	boost::scoped_array<unsigned char> points(new unsigned char[4 * _width * _height]);
-    memcpy(points.get(), _rawsrc.get(), _height * _width * 4);
+	boost::scoped_array<unsigned char> points(new unsigned char[4 * width_ * height_]);
+    memcpy(points.get(), rawsrc_.get(), height_ * width_ * 4);
 
     Point* image = reinterpret_cast<Point*>(points.get());
 
-    size_t numPoints = _width * _height;
+    size_t numPoints = width_ * height_;
 
     const int ThresholdR = 1 << (8 - R);
     const int ThresholdG = 1 << (8 - G);
@@ -248,10 +248,10 @@ void MedianCut16bitQuantizer::quantize(size_t R, size_t G, size_t B, size_t A)
     const unsigned int filterA = (1 << 8) - ThresholdA;
 
     std::priority_queue<boost::shared_ptr<Block>, std::vector<boost::shared_ptr<Block> >, CompareBlock> blockQueue;
-    _tree.reset(new Block(image, numPoints));
-    _tree->shrink();
-	_tree->calcLongestSide(ThresholdR, ThresholdG, ThresholdB, ThresholdA);
-    blockQueue.push(_tree);
+    boost::shared_ptr<Block> firstBlock(new Block(image, numPoints));
+    firstBlock->shrink();
+	firstBlock->calcLongestSide(ThresholdR, ThresholdG, ThresholdB, ThresholdA);
+    blockQueue.push(firstBlock);
 
     while (blockQueue.size() < desiredSize && blockQueue.top()->numPoints() > 1)
     {
@@ -301,7 +301,7 @@ void MedianCut16bitQuantizer::quantize(size_t R, size_t G, size_t B, size_t A)
     while (!blockQueue.empty())
     {
         boost::shared_ptr<Block> block = blockQueue.top();
-        _blocks.push_back(block);
+        blocks_.push_back(block);
         blockQueue.pop();
         unsigned char new_r, new_g, new_b, new_a;
         block->calcAverageColor(new_r, new_g, new_b, new_a);
@@ -327,19 +327,19 @@ void MedianCut16bitQuantizer::quantize(size_t R, size_t G, size_t B, size_t A)
 	        	index = transindex++;
         	}
         }
-        _palette[index].red   = new_r;
-        _palette[index].green = new_g;
-       	_palette[index].blue  = new_b;
-        _trans[index]         = new_a;
+        palette_[index].red   = new_r;
+        palette_[index].green = new_g;
+       	palette_[index].blue  = new_b;
+        trans_[index]         = new_a;
         block->setColorIndex(R, G, B, A, index, colorMap);
     }
 
-    for (size_t y = 0; y < _height; y++)
+    for (size_t y = 0; y < height_; y++)
     {
-    	for (size_t x = 0; x < _width; x++)
+    	for (size_t x = 0; x < width_; x++)
     	{
             int old_r, old_g, old_b, old_a;
-            get(_rawsrc, x, y, old_r, old_g, old_b, old_a);
+            get(rawsrc_, x, y, old_r, old_g, old_b, old_a);
         
 
             size_t colorCode = calcColorCode(old_r, old_g, old_b, old_a, R, G, B, A);
@@ -351,12 +351,12 @@ void MedianCut16bitQuantizer::quantize(size_t R, size_t G, size_t B, size_t A)
         		colorMap[colorCode] = paletteIndex;
         	}
 
-            unsigned char new_r = _palette[paletteIndex].red;
-            unsigned char new_g = _palette[paletteIndex].green;
-            unsigned char new_b = _palette[paletteIndex].blue;
-            unsigned char new_a = _trans[paletteIndex];
+            unsigned char new_r = palette_[paletteIndex].red;
+            unsigned char new_g = palette_[paletteIndex].green;
+            unsigned char new_b = palette_[paletteIndex].blue;
+            unsigned char new_a = trans_[paletteIndex];
 
-            set(_rawdest, x, y, paletteIndex);
+            set(rawdest_, x, y, paletteIndex);
 
             int dr = std::abs(old_r - new_r);
             int dg = std::abs(old_g - new_g);
@@ -364,33 +364,33 @@ void MedianCut16bitQuantizer::quantize(size_t R, size_t G, size_t B, size_t A)
             int da = std::abs(old_a - new_a);
 
             int r, g, b, a;
-            get(_rawsrc, x + 1, y, r, g, b, a);
+            get(rawsrc_, x + 1, y, r, g, b, a);
             r += dr * 7 / 16;
             g += dg * 7 / 16;
             b += db * 7 / 16;
             a += da * 7 / 16;
-            set(_rawsrc, x + 1, y, r, g, b, a);
+            set(rawsrc_, x + 1, y, r, g, b, a);
 
-            get(_rawsrc, x - 1, y + 1, r, g, b, a);
+            get(rawsrc_, x - 1, y + 1, r, g, b, a);
             r += dr * 3 / 16;
             g += dg * 3 / 16;
             b += db * 3 / 16;
             a += da * 3 / 16;
-            set(_rawsrc, x - 1, y + 1, r, g, b, a);
+            set(rawsrc_, x - 1, y + 1, r, g, b, a);
 
-            get(_rawsrc, x, y + 1, r, g, b, a);
+            get(rawsrc_, x, y + 1, r, g, b, a);
             r += dr * 5 / 16;
             g += dg * 5 / 16;
             b += db * 5 / 16;
             a += da * 5 / 16;
-            set(_rawsrc, x, y + 1, r, g, b, a);
+            set(rawsrc_, x, y + 1, r, g, b, a);
 
-            get(_rawsrc, x + 1, y + 1, r, g, b, a);
+            get(rawsrc_, x + 1, y + 1, r, g, b, a);
             r += dr * 1 / 16;
             g += dg * 1 / 16;
             b += db * 1 / 16;
             a += da * 1 / 16;
-            set(_rawsrc, x + 1, y + 1, r, g, b, a);
+            set(rawsrc_, x + 1, y + 1, r, g, b, a);
     	}
     }
 }
@@ -408,9 +408,9 @@ void MedianCut16bitQuantizer::fixPalette(size_t R, size_t G, size_t B, size_t A)
     {
     	for (size_t i = 0; i < 256; i++)
 		{
-        	_palette[i].red   = (int)_palette[i].red * 255 / filterR;
-        	_palette[i].green = (int)_palette[i].green * 255 / filterG;
-       		_palette[i].blue  = (int)_palette[i].blue * 255 / filterB;
+        	palette_[i].red   = (int)palette_[i].red * 255 / filterR;
+        	palette_[i].green = (int)palette_[i].green * 255 / filterG;
+       		palette_[i].blue  = (int)palette_[i].blue * 255 / filterB;
         }
     }
     else
@@ -419,10 +419,10 @@ void MedianCut16bitQuantizer::fixPalette(size_t R, size_t G, size_t B, size_t A)
 	    const unsigned int filterA = (1 << 8) - ThresholdA;
     	for (size_t i = 0; i < 256; i++)
 		{
-        	_palette[i].red   = (int)_palette[i].red * 255 / filterR;
-        	_palette[i].green = (int)_palette[i].green * 255 / filterG;
-       		_palette[i].blue  = (int)_palette[i].blue * 255 / filterB;
-        	_trans[i]         = (int)_trans[i] * 255 / filterA;
+        	palette_[i].red   = (int)palette_[i].red * 255 / filterR;
+        	palette_[i].green = (int)palette_[i].green * 255 / filterG;
+       		palette_[i].blue  = (int)palette_[i].blue * 255 / filterB;
+        	trans_[i]         = (int)trans_[i] * 255 / filterA;
         }
     }
 }

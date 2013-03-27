@@ -16,42 +16,42 @@ PVRWriter::~PVRWriter()
 void PVRWriter::process(buffer_t src, bool hasAlpha)
 {
     bool result;
-    BitChanger expander(_width, _height, hasAlpha, src);
-    _size = expander.height();
-    CPVRTextureHeader header(PVRStandard8PixelType.PixelTypeID, _size, _size);
+    BitChanger expander(width_, height_, hasAlpha, src);
+    size_ = expander.height();
+    CPVRTextureHeader header(PVRStandard8PixelType.PixelTypeID, size_, size_);
     if (hasAlpha)
     {
         PixelType PVRTC4BPP_RGBA(ePVRTPF_PVRTCI_4bpp_RGBA);
-        _pvr = new CPVRTexture(header, expander.buffer().get());
-        result = Transcode(*_pvr, PVRTC4BPP_RGBA, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
+        pvr_ = new CPVRTexture(header, expander.buffer().get());
+        result = Transcode(*pvr_, PVRTC4BPP_RGBA, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
     }
     else
     {
         PixelType PVRTC4BPP_RGB(ePVRTPF_PVRTCI_4bpp_RGB);
-        _pvr = new CPVRTexture(header, expander.buffer().get());
-        result = Transcode(*_pvr, PVRTC4BPP_RGB, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
+        pvr_ = new CPVRTexture(header, expander.buffer().get());
+        result = Transcode(*pvr_, PVRTC4BPP_RGB, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
     }
 };
 
 void PVRWriter::write(const char* filepath)
 {
-    _pvr->saveFile(filepath);
+    pvr_->saveFile(filepath);
 };
 
 void PVRWriter::writeToLegacy(const char* filepath)
 {
-    _pvr->saveFileLegacyPVR(filepath, eOGLES2);
+    pvr_->saveFileLegacyPVR(filepath, eOGLES2);
 };
 
 void PVRWriter::writeToPNG(const char* filepath)
 {
-    CPVRTexture rawImage(*_pvr);
+    CPVRTexture rawImage(*pvr_);
     Transcode(rawImage, PVRStandard8PixelType, ePVRTVarTypeUnsignedByteNorm, ePVRTCSpacelRGB);
     png_bytep raw_data = reinterpret_cast<png_bytep>(rawImage.getDataPtr());
-    png_bytepp raw_list = new png_bytep[_height];
-    for (size_t i = 0; i < _height; ++i)
+    png_bytepp raw_list = new png_bytep[height_];
+    for (size_t i = 0; i < height_; ++i)
     {
-        raw_list[i] = raw_data + (_size * i * 4);
+        raw_list[i] = raw_data + (size_ * i * 4);
     }
     FILE *fp = std::fopen(filepath, "wb");
     if (!fp)
@@ -75,7 +75,7 @@ void PVRWriter::writeToPNG(const char* filepath)
     }
     png_init_io(png, fp);
     png_set_compression_level(png, Z_BEST_COMPRESSION);
-    png_set_IHDR(png, info, _width, _height, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+    png_set_IHDR(png, info, width_, height_, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
     png_write_info(png, info);
     png_write_image(png, raw_list);
     png_write_end(png, info);
@@ -84,9 +84,9 @@ void PVRWriter::writeToPNG(const char* filepath)
 
 void PVRWriter::destroy()
 {
-    if (_pvr)
+    if (pvr_)
     {
-        delete _pvr;
-        _pvr = 0;
+        delete pvr_;
+        pvr_ = 0;
     }
 };

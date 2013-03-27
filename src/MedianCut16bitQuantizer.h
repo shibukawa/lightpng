@@ -17,24 +17,24 @@ struct Point
 
 class Block
 {
-    Point _minCorner, _maxCorner;
-    Point* _points;
-    int _pointsLength;
-    int _colorIndex;
-    size_t _longestSideIndex;
-    size_t _longestSideLength;
+    Point minCorner_, maxCorner_;
+    Point* points_;
+    int pointsLength_;
+    int colorIndex_;
+    size_t longestSideIndex_;
+    size_t longestSideLength_;
 public:
     Block(Point* points, int pointsLength);
-    Point* getPoints() { return _points; }
-    int numPoints() const { return _pointsLength; }
-    inline int longestSideIndex() const { return _longestSideIndex; };
-    inline int longestSideLength() const { return _longestSideLength ;};
-    int colorIndex() const { return _colorIndex; };
+    Point* getPoints() { return points_; }
+    int numPoints() const { return pointsLength_; }
+    inline int longestSideIndex() const { return longestSideIndex_; };
+    inline int longestSideLength() const { return longestSideLength_ ;};
+    int colorIndex() const { return colorIndex_; };
     int calcLongestSide(int R, int G, int B, int A);
     bool operator<(const Block& rhs) const;
     void shrink();
-    Point* minCorner() { return &_minCorner; }
-    Point* maxCorner() { return &_maxCorner; }
+    Point* minCorner() { return &minCorner_; }
+    Point* maxCorner() { return &maxCorner_; }
     void setColorIndex(int R, int G, int B, int A, size_t colorIndex, boost::scoped_array<short>& colorMap);
     void calcAverageColor(unsigned char&, unsigned char&, unsigned char&, unsigned char&);
 private:
@@ -66,18 +66,17 @@ public:
     void quantize(size_t R, size_t G, size_t B, size_t A);
     void fixPalette(size_t R, size_t G, size_t B, size_t A);
 private:
-    bool _preview;
-    boost::shared_ptr<Block> _tree;
-    std::vector<boost::shared_ptr<Block> > _blocks;
+    bool preview_;
+    std::vector<boost::shared_ptr<Block> > blocks_;
 
     short searchNearestColor(int r, int g, int b, int a, bool skipAlpha = false);
 
     inline void get(buffer_t& img, size_t x, size_t y, int& r, int& g, int& b, int& a)
     {
-        clamp(x, 0, _width - 1);
-        clamp(y, 0, _height - 1);
+        clamp(x, 0, width_ - 1);
+        clamp(y, 0, height_ - 1);
 
-        size_t offset = (y * _width + x) * 4;
+        size_t offset = (y * width_ + x) * 4;
         r = static_cast<int>(img[offset]);
         g = static_cast<int>(img[offset + 1]);
         b = static_cast<int>(img[offset + 2]);
@@ -86,23 +85,23 @@ private:
 
     inline void set(buffer_t& img, size_t x, size_t y, int index)
     {
-        clamp(x, 0, _width - 1);
-        clamp(y, 0, _height - 1);
+        clamp(x, 0, width_ - 1);
+        clamp(y, 0, height_ - 1);
         clamp(index, 0, 255);
 
-        img[y * _width + x] = static_cast<unsigned char>(index);
+        img[y * width_ + x] = static_cast<unsigned char>(index);
     };
 
     inline void set(buffer_t& img, size_t x, size_t y, int r, int g, int b, int a)
     {
-        clamp(x, 0, _width - 1);
-        clamp(y, 0, _height - 1);
+        clamp(x, 0, width_ - 1);
+        clamp(y, 0, height_ - 1);
         clamp(r, 0, 255);
         clamp(g, 0, 255);
         clamp(b, 0, 255);
         clamp(a, 0, 255);
 
-        size_t offset = (y * _width + x) * 4;
+        size_t offset = (y * width_ + x) * 4;
         img[offset]     = static_cast<unsigned char>(r);
         img[offset + 1] = static_cast<unsigned char>(g);
         img[offset + 2] = static_cast<unsigned char>(b);

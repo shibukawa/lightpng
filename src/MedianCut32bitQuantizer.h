@@ -16,7 +16,7 @@ class MedianCut32bitQuantizer : public Quantizer
 public:
     MedianCut32bitQuantizer(size_t width, size_t height) : Quantizer(width, height) {}
 private:
-    void _process();
+    void process_();
 };
 
 void median_cut_32bit_quantize(Image& image, PNGWriter& writer, bool hasAlphaChannel);
