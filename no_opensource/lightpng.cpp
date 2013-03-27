@@ -474,6 +474,12 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
         boost::scoped_ptr<PNGWriter> indexed_color_png_writer;
         boost::scoped_ptr<PNGWriter> indexed_reduced_color_png_writer;
         boost::scoped_ptr<PNGWriter> preview_indexed_reduced_color_png_writer;
+        buffer_t image565;
+        buffer_t image565p;
+        buffer_t image5551;
+        buffer_t image5551p;
+        buffer_t image4444;
+        buffer_t image4444p;
 
         #ifdef PVRTC
         boost::scoped_ptr<PVRWriter> pvr_writer;
@@ -492,8 +498,12 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
                     if (!mask_png_writer)
                     {
                         mask_png_writer.reset(new PNGWriter(*reader, hasAlpha, optimize, verbose));
-                        double t1 = get_time(); 
-                        mask_png_writer->process(reduce_color<1>(*reader, 5, 5, 5, true, false));
+                        double t1 = get_time();
+                        if (!image5551)
+                        {
+                            image5551 = reduce_color<1>(*reader, 5, 5, 5, true, false);
+                        }
+                        mask_png_writer->process(image5551);
                         if (bench)
                         {
                             double t2 = get_time();
@@ -508,7 +518,11 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
                     {
                         noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, optimize, verbose));
                         double t1 = get_time();
-                        noalpha_png_writer->process(reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, false));
+                        if (!image565)
+                        {
+                            image565 = reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, false);
+                        }
+                        noalpha_png_writer->process(image565);
                         if (bench)
                         {
                             double t2 = get_time();
@@ -525,7 +539,12 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
                     {
                         preview_mask_png_writer.reset(new PNGWriter(*reader, hasAlpha, 0, verbose));
                         double t1 = get_time();
-                        preview_mask_png_writer->process(reduce_color<1>(*reader, 5, 5, 5, true, true));
+                        if (!image5551p)
+                        {
+                            image5551p = reduce_color<1>(*reader, 5, 5, 5, true, true);
+                        }
+
+                        preview_mask_png_writer->process(image5551p);
                         if (bench)
                         {
                             double t2 = get_time();
@@ -540,7 +559,11 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
                     {
                         preview_noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, 0, verbose));
                         double t1 = get_time();
-                        preview_noalpha_png_writer->process(reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, true));
+                        if (!image565p)
+                        {
+                            image565p = reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, true);
+                        }
+                        preview_noalpha_png_writer->process(image565p);
                         if (bench)
                         {
                             double t2 = get_time();
@@ -557,7 +580,11 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
                     {
                         alpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, optimize, verbose));
                         double t1 = get_time();
-                        alpha_png_writer->process(reduce_color<4>(*reader, 4, 4, 4, true, false));
+                        if (!image4444)
+                        {
+                            image4444 = reduce_color<4>(*reader, 4, 4, 4, true, false);
+                        }
+                        alpha_png_writer->process(image4444);
                         if (bench)
                         {
                             double t2 = get_time();
@@ -572,7 +599,11 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
                     {
                         noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, optimize, verbose));
                         double t1 = get_time();
-                        noalpha_png_writer->process(reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, false));
+                        if (!image565)
+                        {
+                            image565 = reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, false);
+                        }
+                        noalpha_png_writer->process(image565);
                         if (bench)
                         {
                             double t2 = get_time();
@@ -589,7 +620,11 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
                     {
                         preview_alpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, 0, verbose));
                         double t1 = get_time();
-                        preview_alpha_png_writer->process(reduce_color<4>(*reader, 4, 4, 4, true, true));
+                        if (!image4444p)
+                        {
+                            image4444p = reduce_color<4>(*reader, 4, 4, 4, true, true);
+                        }
+                        preview_alpha_png_writer->process(image4444p);
                         if (bench)
                         {
                             double t2 = get_time();
@@ -604,7 +639,11 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
                     {
                         preview_noalpha_png_writer.reset(new PNGWriter(*reader, hasAlpha, 0, verbose));
                         double t1 = get_time();
-                        preview_noalpha_png_writer->process(reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, true));
+                        if (!image565p)
+                        {
+                            image565p = reduce_color<0>(*reader, 5, 6, 5, hasAlphaChannel, true);
+                        }
+                        preview_noalpha_png_writer->process(image565p);
                         if (bench)
                         {
                             double t2 = get_time();
@@ -633,7 +672,7 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
                 {
                     preview_indexed_reduced_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, 0, verbose));
                     double t1 = get_time();
-                    median_cut_16bit_quantize(*reader, *preview_indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, true);
+                    median_cut_16bit_quantize(*reader, *indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, true);
                     if (bench)
                     {
                         double t2 = get_time();

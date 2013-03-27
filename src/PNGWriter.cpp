@@ -366,17 +366,7 @@ void PNGWriter::process(buffer_t raw_buffer, bool shrink)
         if (shrink)
         {
             buffer_t buffer(new unsigned char[_width * _height * 3]);
-            for (size_t y = 0; y < _height; y++)
-            {
-                for (size_t x = 0; x < _width; x++)
-                {
-                    size_t offset1 = (y * _width + x) * 3;
-                    size_t offset2 = (y * _width + x) * 4;
-                    buffer[offset1]     = raw_buffer[offset2];
-           	        buffer[offset1 + 1] = raw_buffer[offset2 + 1];
-                    buffer[offset1 + 2] = raw_buffer[offset2 + 2];
-                }
-            }
+            Image::copy_4_to_3(_width, _height, raw_buffer, buffer);
             if (_verbose)
             {
                 std::cout << "Export as 24 bit png(unused alpha channel was removed)" << std::endl;
@@ -385,26 +375,13 @@ void PNGWriter::process(buffer_t raw_buffer, bool shrink)
         }
         else if (_has_alpha)
         {
-            bool clean = false;
-            for (size_t y = 0; y < _height; y++)
-            {
-                for (size_t x = 0; x < _width; x++)
-                {
-                    size_t offset = (y * _width + x) * 4;
-                    if (raw_buffer[offset + 3] == 0)
-                    {
-                        clean = clean || (raw_buffer[offset] != 0) || (raw_buffer[offset + 1] != 0) || (raw_buffer[offset + 2] != 0);
-                        raw_buffer[offset] = 0;
-                        raw_buffer[offset + 1] = 0;
-                        raw_buffer[offset + 2] = 0;
-                    }
-                }
-            }
+            buffer_t buffer(new unsigned char[_width * _height * 3]);
+            bool clean = Image::copy_4_to_4(_width, _height, raw_buffer, buffer, true);
             if (clean && _verbose)
             {
                 std::cout << "RGB space is cleand" << std::endl;
             }
-            process(raw_buffer);
+            process(buffer);
         }
         else
         {

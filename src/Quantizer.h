@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include "LPType.h"
+#include "Image.h"
+
 
 class Quantizer
 {
@@ -26,25 +28,23 @@ public:
     {
         if (hasAlphaChannel)
 	    {
-	        for (size_t y = 0; y < _height; ++y)
-	        {
-	            memcpy(_src[y], src[y], _width * 4);
-	        }
+	    	Image::copy_4_to_4(_width, _height, src, _src);
 	    }
 	    else
 	    {
-	        for (size_t y = 0; y < _height; y++)
-	        {
-	            unsigned char* destline = _src[y];
-	            unsigned char* srcline = src[y];
-	            for (size_t x = 0; x < _width; x++)
-	            {
-	                destline[x * 4]     = srcline[x * 3];
-	                destline[x * 4 + 1] = srcline[x * 3 + 1];
-	                destline[x * 4 + 2] = srcline[x * 3 + 2];
-	                destline[x * 4 + 3] = 255;
-	            }
-	        }
+	    	Image::copy_3_to_4(_width, _height, src, _src);
+	    }
+	    _process();
+	}
+    void process(buffer_t src, bool hasAlphaChannel)
+    {
+        if (hasAlphaChannel)
+	    {
+	    	Image::copy_4_to_4(_width, _height, src, _rawsrc);
+	    }
+	    else
+	    {
+	    	Image::copy_3_to_4(_width, _height, src, _rawsrc);
 	    }
 	    _process();
 	}

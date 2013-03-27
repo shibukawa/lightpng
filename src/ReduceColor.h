@@ -61,10 +61,7 @@ public:
 
     void process(rows_t src, bool preview = true)
     {
-        for (size_t i = 0; i < _height; ++i)
-        {
-            memcpy(_src[i], src[i], _width * 4);
-        }
+        Image::copy_4_to_4(_width, _height, src, _src);
         const int MaxR = (1 << _R) - 1;
         const int MaxG = (1 << _G) - 1;
         const int MaxB = (1 << _B) - 1;
@@ -194,24 +191,11 @@ public:
     {
         if (hasAlphaChannel)
         {
-            for (size_t y = 0; y < _height; y++)
-            {
-                unsigned char* destline = _src[y];
-                unsigned char* srcline = src[y];
-                for (size_t x = 0; x < _width; x++)
-                {
-                    destline[x * 3]     = srcline[x * 4];
-                    destline[x * 3 + 1] = srcline[x * 4 + 1];
-                    destline[x * 3 + 2] = srcline[x * 4 + 2];
-                }
-            }
+            Image::copy_4_to_3(_width, _height, src, _src);
         }
         else
         {
-            for (size_t i = 0; i < _height; ++i)
-            {
-                memcpy(_src[i], src[i], _width * 3);
-            }
+            Image::copy_3_to_3(_width, _height, src, _src);
         }
         const int MaxR = (1 << _R) - 1;
         const int MaxG = (1 << _G) - 1;
