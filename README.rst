@@ -46,16 +46,17 @@ It needs following library. You should download and decompress at the root folde
 
 * `boost_1_53_0 <http://www.boost.org/>`_
 
-It uses Zopfli as submodule. At first you should run following command ::
+It uses `Zopfli <https://code.google.com/p/zopfli/>`_, `ligimagequant <http://pngquant.org/lib/>`_ as submodule. At first you should run following command ::
 
    $ git submodule int
    $ git submodule update
 
 It uses following libraries, but these source code are bundled:
 
-* libpng
-* libz
-* jpeglib
+* `libpng <http://www.libpng.org/pub/png/>`_ (modified version to use Zopfli)
+* `libz <http://www.zlib.net/>`_
+* `jpeglib <http://www.ijg.org/>`_
+* `pthreads-win32 <http://www.sourceware.org/pthreads-win32/>`_ (for windows cross compile)
 
 This repository contains a build setting file of SCons. I tested on Mac OS X with MaccPorts environment,
 but maybe work on any scons/gcc environment::
@@ -82,9 +83,14 @@ Use this command like this::
 Options
 ~~~~~~~
 
-* ``-s``, ``--skip``:
+* ``-o`` **[level]**, ``--optimize`` **[level]**:
 
-  Skip PNG file size optimization.
+  Set optimize level.
+
+  * 0 - No optimize (fastest)
+  * 1 - PNG zlib option optimize + index color optimize(default)
+  * 2 - Use zopfli with one fiilter + 1
+  * 3 - Use zopfli with all filters + 1
 
 * ``-b``, ``--benchmark``:
 

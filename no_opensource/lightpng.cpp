@@ -745,7 +745,7 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
                 if (!atc_writer)
                 {
                     atc_writer.reset(new ATCWriter(reader->width(), reader->height()));
-                    double t1 = get_time(); 
+                    double t1 = get_time();
                     atc_writer->process(reader->buffer(), hasAlphaChannel);
                     if (bench)
                     {

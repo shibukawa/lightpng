@@ -23,3 +23,4 @@ typedef boost::shared_array<png_color> palette_t;
 typedef boost::shared_array<unsigned char> trans_t;
 
 #endif
+
