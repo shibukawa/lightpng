@@ -235,6 +235,8 @@ All samples are uploaded on `Flicker <http://www.flickr.com/photos/shibukawa/set
 
 * **Smooth UI Kit (400x300):** 103,410 bytes (converted from `PSD file <http://www.icondeposit.com/design:52>`_ by using Photoshop CS5)
 
+  This file is created by Matt Gentile. Released under Creative Commons Attribution 3.0
+
 Full color PNG (Lossless)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
