@@ -39,6 +39,48 @@ smaller than the original PNG file. It will help many mobile game developers.
 ngCore already supports RGBA4444 and RGB565 format. You can create 16bit ``GL2.Texture``
 from this PNG file directly.
 
+Why the File become Smaller? / What does this tool do?
+------------------------------------------------------
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8596428211/" title="block by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8367/8596428211_c454143237_n.jpg" width="320" height="180" alt="block"></a>
+
+* 16 Bit Conversion:
+
+  Cut lower bit.
+
+* Dithering:
+
+  Standard Floyd-Steinberg dithering.
+
+* Quantize(1):
+
+  It uses `ligimagequant <http://pngquant.org/lib/>`_.
+
+* Quantize(2):
+
+  Cuts lower bit and Median-Cut.
+
+* Clean RGB:
+
+  Sets R, G, B pixel color values into 0 if the alpha value is 0.
+
+* Clean Palette:
+
+  Removes unused palette.
+
+* PNG zlib parameter
+
+  It tries 4 strategies (``Z_DEFAULT_STRATEGY``, ``Z_FILTERED``, ``Z_RLE``, ``Z_HUFFMAN_ONLY``,
+  not ``Z_FIXED``) x 6 filter options and decide the smallest option.
+
+* Zopfli
+
+  There are two options. ``--optimize 2`` runs zlib otpion trial (``Z_DEFAULT_STRATEGY`` and all filter
+  options) and then try Zopfli compression with the smallest filter. ``--optimize 3`` is a Bruto-force
+  way. It tries all zlib options and all Zopfli options.
+
 How To Build
 ------------
 
@@ -46,7 +88,8 @@ It needs following library. You should download and decompress at the root folde
 
 * `boost_1_53_0 <http://www.boost.org/>`_
 
-It uses `Zopfli <https://code.google.com/p/zopfli/>`_, `ligimagequant <http://pngquant.org/lib/>`_ as submodule. At first you should run following command ::
+It uses `Zopfli <https://code.google.com/p/zopfli/>`_, `ligimagequant <http://pngquant.org/lib/>`_
+as submodule. At first you should run following command ::
 
    $ git submodule int
    $ git submodule update
@@ -83,14 +126,16 @@ Use this command like this::
 Options
 ~~~~~~~
 
-* ``-o`` **[level]**, ``--optimize`` **[level]**:
+* ``-o`` *level*, ``--optimize`` *level*:
 
-  Set optimize level.
+  Set optimize level:
 
-  * 0 - No optimize (fastest)
-  * 1 - PNG zlib option optimize + index color optimize(default)
-  * 2 - Use zopfli with one fiilter + 1
-  * 3 - Use zopfli with all filters + 1
+  * ``0`` - No optimize (fastest)
+  * ``1`` - PNG zlib option optimize + index color optimize(default)
+  * ``2`` - Use zopfli with one fiilter + 1
+  * ``3`` - Use zopfli with all filters + 1
+
+  level 2 and 3 becomes same results almost all cases. Preview modes always use ``0``.
 
 * ``-b``, ``--benchmark``:
 
@@ -182,12 +227,80 @@ alpha value become transparent.
 
 Preview mode completes the lack of this information. You can see final image on your favorite viewer.
 
-License
--------
+Sample
+------
 
-This source code is released under MIT License.
+All samples are uploaded on `Flicker <http://www.flickr.com/photos/shibukawa/sets/72157633109826482/>`_.
 
-.. include:: LICENSE.rst
+**Lenna: Original File (512x512):** 525,521 bytes (converted from `tiff file <http://www-2.cs.cmu.edu/~chuck/lennapg/lena_std.tif>`_ by using Preview.app)
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8595702270/" title="lenna by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8384/8595702270_d5873869dd_n.jpg" width="320" height="320" alt="lenna"></a>
+
+**Smooth UI Kit (400x300):** 103,410 bytes (converted from `PSD file <http://www.icondeposit.com/design:52>`_ by using Photoshop CS5)
+
+.. raw:: html
+
+Lossless Result
+~~~~~~~~~~~~~~~
+
+**Full color PNG:**
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8594604001/" title="lenna_32 by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8525/8594604001_0429ce1d85.jpg" width="500" height="500" alt="lenna_32"></a>
+
+* 473,226 bytes (``lightpng lenna.png -o 2 -32 lenna_32.png``)
+
+.. raw:: html
+
+* 75,570 bytes (``lightpng uikit.png -o 2 -32 uikit_32.png``)
+
+Lossy Results
+~~~~~~~~~~~~~
+
+**16bit(RGB565) PNG:**
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8594603339/" title="lenna_16 by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8086/8594603339_dc291b3177.jpg" width="500" height="500" alt="lenna_16"></a>
+
+* 274,089 bytes (``lightpng lenna.png -o 2 -16 lenna_16.png``)
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8597500384/" title="uikit_16 by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8108/8597500384_4b78b82b93.jpg" width="400" height="300" alt="uikit_16"></a>
+
+* 59,532 bytes (``lightpng uikit.png -o 2 -16 uikit_16.png``)
+
+**24bit index color PNG:**
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8594602991/" title="lenna_32i by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8097/8594602991_c4443d0608.jpg" width="500" height="500" alt="lenna_32i"></a>
+
+* 178,214 bytes (``lightpng lenna.png -o 2 -32i lenna_32i.png``)
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8596394929/" title="uikit_32i by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8091/8596394929_1eea9d7374.jpg" width="400" height="300" alt="uikit_32i"></a>
+
+* 56,506 bytes (``lightpng uikit.png -o 2 -32i uikit_32i.png``)
+
+**16bit(RGB565) index color PNG:**
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8594603239/" title="lenna_16i by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8509/8594603239_3915f12bed.jpg" width="500" height="500" alt="lenna_16i"></a>
+
+* 153,976 bytes (``lightpng lenna.png -o 2 -16i lenna_16i.png``)
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8597500392/" title="uikit_16i by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8105/8597500392_26db422844.jpg" width="400" height="300" alt="uikit_16i"></a>
+
+* 34,289 bytes (``lightpng uikit.png -o 2 -16i uikit_16i.png``)
 
 Non-Open Source Version
 -----------------------
@@ -217,23 +330,25 @@ It adds following output options:
 
 * ``-pvr`` *PATH*:
 
-  4 bpp PVRTC compressed texture file
+  4 bpp PVRTC compressed texture file (PVR version 3). PVRTC should be square powered by two sizes. ``lightpng`` adds extra spaces to match this rule.
 
 * ``-lpvr`` *PATH*:
 
-  4 bpp PVRTC compressed texture file with legacy format (version 2)
+  4 bpp PVRTC compressed texture file with legacy format (PVR version 2).
+
+  It is a same format as Apple's ``texturetool`` command.
 
 * ``-ppvr`` *PATH*:
 
-  Preview mode of PVRTC
+  Preview mode of PVRTC.
 
 * ``-atc`` *PATH*:
 
-  8 bpp ATITC compressed texture file
+  8 bpp ATITC compressed texture file. It is a just raw bit data. It doesn't contain picture size information.
 
 * ``-fatc`` *PATH*:
 
-  8 bpp ATITC compressed texture file with header information
+  8 bpp ATITC compressed texture file with header information.
 
 * ``-patc`` *PATH*:
 
@@ -248,6 +363,46 @@ I am reading the license of Ardeno SDK, but it maybe prohibit linking with open 
 
    ``--no-opensource`` and ``--mingw32`` can not be enabled at the same time now.
    Please anyone tell me how to use closed source .lib via mingw32.
+
+Texture Compression Sample (Preview Mode)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These resulting PNG files are converted from PVR/ATC. They are good for previewing qualities.
+
+**PVR preview:**
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8596237243/" title="lenna_pvr by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8524/8596237243_253c3b80aa.jpg" width="500" height="500" alt="lenna_pvr"></a>
+
+* (``lightpng lenna.png -ppvr lenna_pvr.png``)
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8597500328/" title="uikit_pvr by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8516/8597500328_9f02e74c77.jpg" width="400" height="300" alt="uikit_pvr"></a>
+
+* (``lightpng uikit.png -ppvr uikit_pvr.png``)
+
+**ATC preview:**
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8596237149/" title="lenna_atc by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8519/8596237149_5e2f022dc4.jpg" width="500" height="500" alt="lenna_atc"></a>
+
+* (``lightpng lenna.png -patc lenna_atc.png``)
+
+.. raw:: html
+
+   <a href="http://www.flickr.com/photos/shibukawa/8597500352/" title="uikit_atc by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8228/8597500352_8ae0031895.jpg" width="400" height="300" alt="uikit_atc"></a>
+
+* (``lightpng uikit.png -patc uikit_atc.png``)
+
+License
+-------
+
+This source code is released under MIT License.
+
+.. include:: LICENSE.rst
 
 Author
 ------

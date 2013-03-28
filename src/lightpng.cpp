@@ -15,10 +15,7 @@
 void help()
 {
     std::cout << "lightpng: PNG optimization tool for game graphics" << std::endl
-              << "   Copyright (c) 2012 Yoshiki Shibukawa (DeNA Co.,Ltd, and ngmoco LLC)" << std::endl
-              << std::endl
-              << "It uses NeuQuant Neural-Net Quantization Algorithm Interface" << std::endl
-              << "   Copyright (c) 1994 Anthony Dekker" << std::endl
+              << "   Copyright (c) 2012-2013 Yoshiki Shibukawa (DeNA Co.,Ltd, and ngmoco LLC)" << std::endl
               << std::endl
               << "   Open source version" << std::endl
               << std::endl
