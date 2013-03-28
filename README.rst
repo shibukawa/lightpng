@@ -42,9 +42,8 @@ from this PNG file directly.
 Why the File become Smaller? / What does this tool do?
 ------------------------------------------------------
 
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8596428211/" title="block by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8367/8596428211_c454143237_n.jpg" width="320" height="180" alt="block"></a>
+.. image:: http://farm9.staticflickr.com/8367/8596428211_c454143237_n.jpg
+   :target: http://www.flickr.com/photos/shibukawa/8596428211/
 
 * 16 Bit Conversion:
 
