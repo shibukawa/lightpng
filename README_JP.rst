@@ -30,14 +30,65 @@ ngCoreでは、RGBA4444とRGB565をサポートしているため、このファ
 
 PNGは開発者も、デザイナーも簡単に利用できるフォーマットです。結果のPNGファイルは元のPNGよりも小さくなります。モバイルゲームの開発者に最適です。
 
+Why the File become Smaller? / What does this tool do?
+
+なぜファイルサイズが小さくなるのか？このツールは何をしているのか？
+------------------------------------------------------------------
+
+.. image:: http://farm9.staticflickr.com/8367/8596428211_c454143237_z.jpg
+   :target: http://www.flickr.com/photos/shibukawa/8596428211/
+
+* 16 Bit Conversion:
+
+  下位ビットを削除します。
+
+* Dithering:
+
+  Floyd-Steinbergのディザリングです。
+
+* Quantize(1):
+
+  `ligimagequant <http://pngquant.org/lib/>`_ を使用して減色します。
+
+* Quantize(2):
+
+  下位ビットを削り、メディアンカット法で減色します。
+
+* Clean RGB:
+
+  アルファがゼロのピクセルがあれば、R, G, Bの値をゼロにします。
+
+* Clean Palette:
+
+  未使用のパレットを削除します。
+
+* PNG zlib parameter
+
+  4種類の圧縮アルゴリズム (``Z_DEFAULT_STRATEGY``, ``Z_FILTERED``, ``Z_RLE``, ``Z_HUFFMAN_ONLY``,
+  ただし ``Z_FIXED`` は使わない) x 6種類のフィルタの組み合わせで圧縮を行なってみて、最小のファイルサイズになるオプションを探します。
+
+* Zopfli
+
+  2種類のオプションがあります。 ``--optimize 2`` の時は、zlibのオプションをトライアルで行なってみて(``Z_DEFAULT_STRATEGY`` とすべてのフィルタオプション)、その中で最小の結果になったフィルタオプションを使ってZopfliを使った圧縮を行います。 ``--optimize 3`` の時は、すべてのzlibとZopfliのオプションの組み合わせでトライアルを行います。
+
 ビルドの仕方
 ------------
 
-ビルドには下記のライブラリが必要となりますが、どちらのソースコードも同梱しています:
+下記のライブラリが必要となります。ダウンロードしてリポジトリのルートフォルダに展開してください。
 
-* libpng
-* libz
-* jpeglib
+* `boost_1_53_0 <http://www.boost.org/>`_
+
+このプロジェクトでは `Zopfli <https://code.google.com/p/zopfli/>`_ と `ligimagequant <http://pngquant.org/lib/>`_ をサブモジュールとして使います。最初に下記のコマンドを実行してください ::
+
+   $ git submodule init
+   $ git submodule update
+
+ビルドには下記のライブラリが必要となりますが、これらのソースコードは同梱しています:
+
+* `libpng <http://www.libpng.org/pub/png/>`_ (Zopfliを使用するように改造済み)
+* `libz <http://www.zlib.net/>`_
+* `jpeglib <http://www.ijg.org/>`_
+* `pthreads-win32 <http://www.sourceware.org/pthreads-win32/>`_ (Windows版のクロスコンパイル用)
 
 このリポジトリには、SConsの設定ファイルがついています。MacPorts環境のMac OS Xでしかテストしてませんが、
 他のSCons/gcc環境でもビルドできると思います ::
@@ -61,24 +112,83 @@ PNGは開発者も、デザイナーも簡単に利用できるフォーマッ�
 
 ``入力画像`` は ``.png`` と ``.jpg`` 画像を受け取ることができます。
 
+
 オプション
 ~~~~~~~~~~
 
 :-s, --skip: PNGファイルのサイズ最適化をスキップします
-:-b, --benchmark: 処理にかかった時間を表示します
-:-v, --verbose: 圧縮結果を表示します
-:-h, --help: 使い方を表示します
+:-b, --benchmark: 
+:-v, --verbose: 
+:-h, --help: 
+
+Options
+~~~~~~~
+
+* ``-o`` *レベル*, ``--optimize`` *レベル*:
+
+  最適化レベルを設定します:
+
+  * ``0`` - 最適化なし(最速)
+  * ``1`` - PNG zlibオプションの最適化と、インデックスカラーの最適化(デフォルト)
+  * ``2`` - 1の最適化と、Zopfliと1つのフィルタを使って圧縮
+  * ``3`` - Zopfliのとすべてのフィルタを使って圧縮
+
+  ほとんどの場合で、レベル2とレベル3は同じ結果になります。また、プレビューモードは常に ``0`` を使用します。
+
+* ``-b``, ``--benchmark``:
+
+  処理にかかった時間を表示します
+
+* ``-v``, ``--verbose``:
+
+  圧縮結果を表示します
+
+* ``-h``, ``--help``:
+  
+  使い方を表示します
 
 出力オプション
 ~~~~~~~~~~~~~~
 
-:-16m PATH: 1ビットのアルファチャンネルを持つ16ビットのPNG(RGBA 5551)を生成します。もし入力ファイルがアルファチャンネルを持っていなかった場合は、RGB 565のPNGファイルを生成します。
-:-16a PATH: 4ビットのアルファチャンネルを持つ16ビットのPNG(RGBA 4444)を生成します。もし入力ファイルがアルファチャンネルを持っていなかった場合は、RGB 565のPNGファイルを生成します。
-:-16 PATH: ``-16a`` と同じです
-:-32 PATH: 24/32ビットのPNGファイルを生成します。ディザリングは行わず、圧縮オプションを調整してファイルサイズの縮小のみを行います。
-:-p16m PATH: ``-16m`` のプレビューモードです。
-:-p16a PATH: ``-16a`` のプレビューモードです。
-:-p16 PATH: ``-16`` のプレビューモードです。
+* ``-16m`` *パス*:
+  
+  1ビットのアルファチャンネルを持つ16ビットのPNG(RGBA 5551)を生成します。もし入力ファイルがアルファチャンネルを持っていなかった場合は、RGB 565のPNGファイルを生成します。
+
+* ``-16a`` *パス*:
+
+  4ビットのアルファチャンネルを持つ16ビットのPNG(RGBA 4444)を生成します。もし入力ファイルがアルファチャンネルを持っていなかった場合は、RGB 565のPNGファイルを生成します。
+
+* ``-16`` *パス*:
+
+  ``-16a`` と同じです
+
+* ``-16i`` *パス*:
+
+  4ビットのアルファチャンネルを持つ16ビットで、かつ256色以内のインデックスカラーを持つのPNG(RGBA 4444)を生成します。もし入力ファイルがアルファチャンネルを持っていなかった場合は、RGB 565のPNGファイルを生成します。
+
+* ``-32`` *パス*:
+
+  24/32ビットのPNGファイルを生成します。ディザリングは行わず、圧縮オプションを調整してファイルサイズの縮小のみを行います。
+
+* ``-32i`` *パス*:
+
+  24/32ビットの256色以内のインデックスカラーを持つPNGファイルを生成します。ディザリングは行わず、圧縮オプションを調整してファイルサイズの縮小のみを行います。
+
+* ``-p16m`` *パス*:
+
+  ``-16m`` のプレビューモードです。
+
+* ``-p16a`` *パス*:
+
+  ``-16a`` のプレビューモードです。
+
+* ``-p16`` *パス*:
+
+  ``-16`` のプレビューモードです。
+
+* ``-p16i`` *パス*:
+
+  ``-16i`` のプレビューモードです。
 
 テクスチャモード / プレビューモード
 -----------------------------------
@@ -116,12 +226,68 @@ PNGは開発者も、デザイナーも簡単に利用できるフォーマッ�
 
 プレビューモードはこの欠けた情報を補完します。好きなツールを使って、最終イメージに近い結果を確認することができます。
 
-ライセンス
-----------
+サンプル
+--------
 
-このソースコードはMITライセンスでリリースされています。
+すべてのサンプルは `Flicker <http://www.flickr.com/photos/shibukawa/sets/72157633109826482/>`_ にアップロードされています。
 
-.. include:: LICENSE.rst
+* **Lenna: Original File (512x512):** 525,521 bytes (converted from `tiff file <http://www-2.cs.cmu.edu/~chuck/lennapg/lena_std.tif>`_ by using Preview.app)
+
+* **Smooth UI Kit: Original File (400x300):** 103,410 bytes (converted from `PSD file <http://www.icondeposit.com/design:52>`_ by using Photoshop CS5)
+
+  This file is created by Matt Gentile. Released under Creative Commons Attribution 3.0
+
+フルカラーPNG (ロスレス)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. image:: http://farm9.staticflickr.com/8525/8594604001_f1ae0c37b4_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8594604001/
+
+* 473,226 bytes (``lightpng lenna.png -o 2 -32 lenna_32.png``)
+
+.. image:: http://farm9.staticflickr.com/8382/8596394907_626eb2967b_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8596394907/
+
+* 75,570 bytes (``lightpng uikit.png -o 2 -32 uikit_32.png``)
+
+16bit(RGB565) PNG (ロスあり)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. image:: http://farm9.staticflickr.com/8086/8594603339_eee3b3c44a_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8594603339/
+
+* 274,089 bytes (``lightpng lenna.png -o 2 -16 lenna_16.png``)
+
+.. image:: http://farm9.staticflickr.com/8108/8597500384_a818719645_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8597500384/
+
+* 59,532 bytes (``lightpng uikit.png -o 2 -16 uikit_16.png``)
+
+24bitインデックスカラーPNG (ロスあり)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. image:: http://farm9.staticflickr.com/8097/8594602991_4667dc59b8_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8594602991/
+
+* 178,214 bytes (``lightpng lenna.png -o 2 -32i lenna_32i.png``)
+
+.. image:: http://farm9.staticflickr.com/8091/8596394929_f639151bfc_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8596394929/
+
+* 56,506 bytes (``lightpng uikit.png -o 2 -32i uikit_32i.png``)
+
+16bit(RGB565) インデックスカラーPNG (ロスあり)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. image:: http://farm9.staticflickr.com/8509/8594603239_ea5eaa07f7_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8594603239/
+
+* 153,976 bytes (``lightpng lenna.png -o 2 -16i lenna_16i.png``)
+
+.. image:: http://farm9.staticflickr.com/8105/8597500392_9567a3b8b1_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8597500392/
+
+* 34,289 bytes (``lightpng uikit.png -o 2 -16i uikit_16i.png``)
 
 クローズドソースバージョン
 --------------------------
@@ -135,18 +301,45 @@ AdrenoSDKはWindowsの実行形式として提供されています。そのた�
 
 クローズドソース版を作成するには、以下のオプションをsconsコマンドに追加してください。
 
-:--no-opensource: 圧縮テクスチャのサポートを有効にします。
-:--PVRTexLib=DIR: PVRTC圧縮テクスチャへの変換・プレビューを有効にします。デフォルトは "./PVRTexLib" です。 
-:--AdrenoSDK=DIR: ATITC圧縮テクスチャへの変換・プレビューを有効にします。デフォルトは "~/.wine/drive_c/AdrenoSDK" です。
+* ``--no-opensource``:
+
+  圧縮テクスチャのサポートを有効にします。
+
+* ``--PVRTexLib=``\ *DIR*:
+
+  PVRTC圧縮テクスチャへの変換・プレビューを有効にします。デフォルトは "./PVRTexLib" です。 
+
+* ``--AdrenoSDK=``\ *DIR*:
+
+  ATITC圧縮テクスチャへの変換・プレビューを有効にします。デフォルトは "~/.wine/drive_c/AdrenoSDK" です。
 
 このオプションを使ってビルドすると、出力オプションに次の項目が追加されます。
 
-:-pvr PATH: 4 bpp PVRTC圧縮テクスチャ 
-:-lpvr PATH: 4 bpp PVRTC圧縮テクスチャ(version 2のレガシーフォーマット)
-:-ppvr PATH: 4 bpp PVRTC圧縮テクスチャのプレビューモード
-:-atc PATH: 8 bpp ATITC圧縮テクスチャ
-:-fatc PATH: 8 bpp ATITC圧縮テクスチャ(ヘッダ情報つき)
-:-patc PATH: 8 bpp ATITC圧縮テクスチャのプレビューモード
+* ``-pvr`` *パス*:
+
+  4 bpp PVRTC圧縮テクスチャ(PVRバージョン3)。PVRTCは2のべき乗の正方形である必要があります。 ``lightpng`` はこのルールにあうようにスペースを追加します。
+
+* ``-lpvr`` *パス*:
+
+  旧式の、4 bpp PVRTC圧縮テクスチャ(PVR version 2)です。
+
+  このコマンドの結果は、アップルの ``texturetool`` と同じ結果になります。
+
+* ``-ppvr`` *パス*:
+
+  4 bpp PVRTC圧縮テクスチャのプレビューモードです。
+
+* ``-atc`` *パス*:
+
+  ATITC圧縮テクスチャです。このファイルの出力結果はビットデータのみです。絵のサイズの情報などは含まれません。
+
+* ``-fatc`` *パス*:
+
+  8 bpp ATITC圧縮テクスチャ(ヘッダ情報つき)です。AdrenoSDKのヘッダファイルを付与することで、イメージサイズの情報を後から取得することができます。
+
+* ``-patc`` *パス*:
+
+  8 bpp ATITC圧縮テクスチャのプレビューモード
 
 このオプションを有効にして作成したプログラムは、一般公開せず、内部利用のみとしてください。改変したソースコードやバイナリも、一般公開は避けてください。もしこのクローズド版に含まれるコードを流用したい場合は、 yoshiki at shibu.jp まで、Amazon.comかAmazon.co.jpのギフトを送ってください。
 
@@ -157,8 +350,41 @@ AdrenoSDKはWindowsの実行形式として提供されています。そのた�
    現在は ``--no-opensource`` と ``--mingw32`` を同時に利用することはできません。
    もし、mingw32でクローズドソースの.libを利用する方法が分かる方はお知らせ下さい。
 
+PVR圧縮テクスチャサンプル(プレビューモード)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. image:: http://farm9.staticflickr.com/8524/8596237243_38d985ac86_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8596237243/
+
+* (``lightpng lenna.png -ppvr lenna_pvr.png``)
+
+.. image:: http://farm9.staticflickr.com/8516/8597500328_7fe762e7e1_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8597500328/
+
+* (``lightpng uikit.png -ppvr uikit_pvr.png``)
+
+ATC圧縮テクスチャサンプル(プレビューモード)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. image:: http://farm9.staticflickr.com/8519/8596237149_9ca1a16736_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8596237149/
+
+* (``lightpng lenna.png -patc lenna_atc.png``)
+
+.. image:: http://farm9.staticflickr.com/8228/8597500352_60132247c9_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8597500352/
+
+* (``lightpng uikit.png -patc uikit_atc.png``)
+
+ライセンス
+----------
+
+このソースコードはMITライセンスでリリースされています。
+
+.. include:: LICENSE.rst
+
 作者
-----
+------
 
 :Copyright: Yoshiki Shibukawa (DeNA Co.,Ltd. / ngmoco:) LLC)
 :Contact: yshibukawa at ngmoco.com

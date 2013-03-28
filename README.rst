@@ -90,7 +90,7 @@ It needs following library. You should download and decompress at the root folde
 It uses `Zopfli <https://code.google.com/p/zopfli/>`_, `ligimagequant <http://pngquant.org/lib/>`_
 as submodule. At first you should run following command ::
 
-   $ git submodule int
+   $ git submodule init
    $ git submodule update
 
 It uses following libraries, but these source code are bundled:
@@ -353,8 +353,6 @@ I am reading the license of Ardeno SDK, but it maybe prohibit linking with open 
 
 PVR Texture Compression Sample (Preview Mode)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-These resulting PNG files are converted from PVR/ATC. They are good for previewing qualities.
 
 .. image:: http://farm9.staticflickr.com/8524/8596237243_38d985ac86_o.png
    :target: http://www.flickr.com/photos/shibukawa/8596237243/
