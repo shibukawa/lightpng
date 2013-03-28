@@ -42,7 +42,7 @@ from this PNG file directly.
 Why the File become Smaller? / What does this tool do?
 ------------------------------------------------------
 
-.. image:: http://farm9.staticflickr.com/8367/8596428211_c454143237_n.jpg
+.. image:: http://farm9.staticflickr.com/8367/8596428211_c454143237_z.jpg
    :target: http://www.flickr.com/photos/shibukawa/8596428211/
 
 * 16 Bit Conversion:
@@ -231,73 +231,59 @@ Sample
 
 All samples are uploaded on `Flicker <http://www.flickr.com/photos/shibukawa/sets/72157633109826482/>`_.
 
-**Lenna: Original File (512x512):** 525,521 bytes (converted from `tiff file <http://www-2.cs.cmu.edu/~chuck/lennapg/lena_std.tif>`_ by using Preview.app)
+* **Lenna: Original File (512x512):** 525,521 bytes (converted from `tiff file <http://www-2.cs.cmu.edu/~chuck/lennapg/lena_std.tif>`_ by using Preview.app)
 
-.. raw:: html
+* **Smooth UI Kit (400x300):** 103,410 bytes (converted from `PSD file <http://www.icondeposit.com/design:52>`_ by using Photoshop CS5)
 
-   <a href="http://www.flickr.com/photos/shibukawa/8595702270/" title="lenna by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8384/8595702270_d5873869dd_n.jpg" width="320" height="320" alt="lenna"></a>
+Full color PNG (Lossless)
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Smooth UI Kit (400x300):** 103,410 bytes (converted from `PSD file <http://www.icondeposit.com/design:52>`_ by using Photoshop CS5)
-
-.. raw:: html
-
-Lossless Result
-~~~~~~~~~~~~~~~
-
-**Full color PNG:**
-
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8594604001/" title="lenna_32 by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8525/8594604001_0429ce1d85.jpg" width="500" height="500" alt="lenna_32"></a>
+.. image:: http://farm9.staticflickr.com/8525/8594604001_f1ae0c37b4_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8594604001/
 
 * 473,226 bytes (``lightpng lenna.png -o 2 -32 lenna_32.png``)
 
-.. raw:: html
+.. image:: http://farm9.staticflickr.com/8382/8596394907_626eb2967b_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8596394907/
 
 * 75,570 bytes (``lightpng uikit.png -o 2 -32 uikit_32.png``)
 
-Lossy Results
-~~~~~~~~~~~~~
+16bit(RGB565) PNG (Lossy)
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**16bit(RGB565) PNG:**
-
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8594603339/" title="lenna_16 by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8086/8594603339_dc291b3177.jpg" width="500" height="500" alt="lenna_16"></a>
+.. image:: http://farm9.staticflickr.com/8086/8594603339_eee3b3c44a_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8594603339/
 
 * 274,089 bytes (``lightpng lenna.png -o 2 -16 lenna_16.png``)
 
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8597500384/" title="uikit_16 by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8108/8597500384_4b78b82b93.jpg" width="400" height="300" alt="uikit_16"></a>
+.. image:: http://farm9.staticflickr.com/8108/8597500384_a818719645_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8597500384/
 
 * 59,532 bytes (``lightpng uikit.png -o 2 -16 uikit_16.png``)
 
-**24bit index color PNG:**
+24bit index color PNG (Lossy)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8594602991/" title="lenna_32i by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8097/8594602991_c4443d0608.jpg" width="500" height="500" alt="lenna_32i"></a>
+.. image:: http://farm9.staticflickr.com/8097/8594602991_4667dc59b8_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8594602991/
 
 * 178,214 bytes (``lightpng lenna.png -o 2 -32i lenna_32i.png``)
 
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8596394929/" title="uikit_32i by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8091/8596394929_1eea9d7374.jpg" width="400" height="300" alt="uikit_32i"></a>
+.. image:: http://farm9.staticflickr.com/8091/8596394929_f639151bfc_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8596394929/
 
 * 56,506 bytes (``lightpng uikit.png -o 2 -32i uikit_32i.png``)
 
-**16bit(RGB565) index color PNG:**
+16bit(RGB565) index color PNG (Lossy)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8594603239/" title="lenna_16i by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8509/8594603239_3915f12bed.jpg" width="500" height="500" alt="lenna_16i"></a>
+.. image:: http://farm9.staticflickr.com/8509/8594603239_ea5eaa07f7_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8594603239/
 
 * 153,976 bytes (``lightpng lenna.png -o 2 -16i lenna_16i.png``)
 
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8597500392/" title="uikit_16i by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8105/8597500392_26db422844.jpg" width="400" height="300" alt="uikit_16i"></a>
+.. image:: http://farm9.staticflickr.com/8105/8597500392_9567a3b8b1_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8597500392/
 
 * 34,289 bytes (``lightpng uikit.png -o 2 -16i uikit_16i.png``)
 
@@ -363,36 +349,31 @@ I am reading the license of Ardeno SDK, but it maybe prohibit linking with open 
    ``--no-opensource`` and ``--mingw32`` can not be enabled at the same time now.
    Please anyone tell me how to use closed source .lib via mingw32.
 
-Texture Compression Sample (Preview Mode)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+PVR Texture Compression Sample (Preview Mode)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These resulting PNG files are converted from PVR/ATC. They are good for previewing qualities.
 
-**PVR preview:**
-
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8596237243/" title="lenna_pvr by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8524/8596237243_253c3b80aa.jpg" width="500" height="500" alt="lenna_pvr"></a>
+.. image:: http://farm9.staticflickr.com/8524/8596237243_38d985ac86_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8596237243/
 
 * (``lightpng lenna.png -ppvr lenna_pvr.png``)
 
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8597500328/" title="uikit_pvr by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8516/8597500328_9f02e74c77.jpg" width="400" height="300" alt="uikit_pvr"></a>
+.. image:: http://farm9.staticflickr.com/8516/8597500328_7fe762e7e1_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8597500328/
 
 * (``lightpng uikit.png -ppvr uikit_pvr.png``)
 
-**ATC preview:**
+ATC Texture Compression Sample (Preview Mode)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8596237149/" title="lenna_atc by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8519/8596237149_5e2f022dc4.jpg" width="500" height="500" alt="lenna_atc"></a>
+.. image:: http://farm9.staticflickr.com/8519/8596237149_9ca1a16736_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8596237149/
 
 * (``lightpng lenna.png -patc lenna_atc.png``)
 
-.. raw:: html
-
-   <a href="http://www.flickr.com/photos/shibukawa/8597500352/" title="uikit_atc by shibukawa.yoshiki, on Flickr"><img src="http://farm9.staticflickr.com/8228/8597500352_8ae0031895.jpg" width="400" height="300" alt="uikit_atc"></a>
+.. image:: http://farm9.staticflickr.com/8228/8597500352_60132247c9_o.png
+   :target: http://www.flickr.com/photos/shibukawa/8597500352/
 
 * (``lightpng uikit.png -patc uikit_atc.png``)
 
