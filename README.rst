@@ -39,15 +39,15 @@ smaller than the original PNG file. It will help many mobile game developers.
 ngCore already supports RGBA4444 and RGB565 format. You can create 16bit ``GL2.Texture``
 from this PNG file directly.
 
-Why the File become Smaller? / What does this tool do?
-------------------------------------------------------
+Why the File becomes Smaller? / What does this tool do?
+-------------------------------------------------------
 
 .. image:: http://farm9.staticflickr.com/8367/8596428211_c454143237_z.jpg
    :target: http://www.flickr.com/photos/shibukawa/8596428211/
 
 * 16 Bit Conversion:
 
-  Cut lower bit.
+  Cut lower bits.
 
 * Dithering:
 
@@ -55,15 +55,15 @@ Why the File become Smaller? / What does this tool do?
 
 * Quantize(1):
 
-  It uses `ligimagequant <http://pngquant.org/lib/>`_.
+  It uses `libimagequant <http://pngquant.org/lib/>`_ (this is a library version of pngquant).
 
 * Quantize(2):
 
-  Cuts lower bit and Median-Cut.
+  Cuts lower bits and applies Median-Cut algorithm.
 
 * Clean RGB:
 
-  Sets R, G, B pixel color values into 0 if the alpha value is 0.
+  Sets R, G, B pixel color values to 0 if the alpha value is 0.
 
 * Clean Palette:
 
@@ -72,42 +72,42 @@ Why the File become Smaller? / What does this tool do?
 * PNG zlib parameter
 
   It tries 4 strategies (``Z_DEFAULT_STRATEGY``, ``Z_FILTERED``, ``Z_RLE``, ``Z_HUFFMAN_ONLY``,
-  not ``Z_FIXED``) x 6 filter options and decide the smallest option.
+  not ``Z_FIXED``) x 6 filter options and decides the smallest option.
 
 * Zopfli
 
   There are two options. ``--optimize 2`` runs zlib otpion trial (``Z_DEFAULT_STRATEGY`` and all filter
-  options) and then try Zopfli compression with the smallest filter. ``--optimize 3`` is a Bruto-force
-  way. It tries all zlib options and all Zopfli options.
+  options) and then tries Zopfli compression with the smallest filter. ``--optimize 3`` is a Brute-force
+  method. It tries all zlib options and all Zopfli options.
 
 How To Build
 ------------
 
-It needs following library. You should download and decompress at the root folder:
+It needs the following library. You should download and decompress into the root folder of lightpng's folder:
 
 * `boost_1_53_0 <http://www.boost.org/>`_
 
-It uses `Zopfli <https://code.google.com/p/zopfli/>`_, `ligimagequant <http://pngquant.org/lib/>`_
-as submodule. At first you should run following command ::
+It uses `Zopfli <https://code.google.com/p/zopfli/>`_, `libimagequant <http://pngquant.org/lib/>`_
+as submodule. At first you should run the following command ::
 
    $ git submodule init
    $ git submodule update
 
-It uses following libraries, but these source code are bundled:
+It uses the following libraries, but these source codes are bundled:
 
 * `libpng <http://www.libpng.org/pub/png/>`_ (modified version to use Zopfli)
 * `libz <http://www.zlib.net/>`_
 * `jpeglib <http://www.ijg.org/>`_
 * `pthreads-win32 <http://www.sourceware.org/pthreads-win32/>`_ (for windows cross compile)
 
-This repository contains a build setting file of SCons. I tested on Mac OS X with MaccPorts environment,
-but maybe work on any scons/gcc environment::
+This repository contains a build setting file for SCons. I tested on Mac OS X with MacPorts environment,
+but maybe it will work on any scons/gcc environment::
 
    $ sudo port install scons
    $ scons
    $ ./lightpng input.png -16m output.png
 
-If you have MinGW environment, you can build Win32 binary on your environment ::
+If you have MinGW environment, you can build Win32 binary in your environment ::
 
    $ sudo port install i386-mingw32-gcc scons
    $ soncs --mingw32
@@ -134,7 +134,7 @@ Options
   * ``2`` - Use zopfli with one fiilter + 1
   * ``3`` - Use zopfli with all filters + 1
 
-  level 2 and 3 becomes same results almost all cases. Preview modes always use ``0``.
+  level 2 and 3 gives the same results in almost all cases. Preview modes always use ``0``.
 
 * ``-b``, ``--benchmark``:
 
