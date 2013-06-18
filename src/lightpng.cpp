@@ -503,7 +503,7 @@ void process_image(const char*& input_path, output_list& outputs, size_t optimiz
                 {
                     preview_indexed_reduced_color_png_writer.reset(new PNGWriter(*reader, hasAlpha, 0, verbose));
                     double t1 = get_time();
-                    median_cut_16bit_quantize(*reader, *indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, true);
+                    median_cut_16bit_quantize(*reader, *preview_indexed_reduced_color_png_writer, hasAlphaChannel, hasAlpha, true);
                     if (bench)
                     {
                         double t2 = get_time();
